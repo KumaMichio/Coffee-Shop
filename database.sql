@@ -19,10 +19,55 @@ CREATE TABLE cafes (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE users (
+    id              BIGSERIAL PRIMARY KEY,
+    username        VARCHAR(100),
+    email           VARCHAR(150) UNIQUE NOT NULL,
+    password_hash   TEXT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique
+    ON users (username);
+
+CREATE TABLE favorites (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE search_history (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    keyword         VARCHAR(255),
+    location_lat    DOUBLE PRECISION,
+    location_lng    DOUBLE PRECISION,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_history_user_created
+    ON search_history (user_id, created_at DESC);
+
+CREATE TABLE cafe_reviews (
+    id          BIGSERIAL PRIMARY KEY,
+    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+    user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating      INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment     TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE cafe_photos (
+    id          BIGSERIAL PRIMARY KEY,
+    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+    photo_url   TEXT NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 -- ============================================
 -- SAMPLE DATA (Hanoi – 20+ cafes)
--- TẤT CẢ UTF-8 AN TOÀN CHO PostgreSQL
 -- ============================================
+
 
 INSERT INTO cafes (name, address, lat, lng, rating, open_time, close_time, image_url, description)
 VALUES
