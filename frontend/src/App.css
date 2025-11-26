@@ -1,38 +1,306 @@
-.App {
-  text-align: center;
+/* App.css */
+
+/* Reset nhẹ cho đẹp hơn */
+* {
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+html,
+body,
+#root,
+.app-root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f4f5fb;
+  color: #222;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* ===== Layout chính ===== */
+
+.app-root {
   display: flex;
   flex-direction: column;
+}
+
+/* Header trên cùng */
+.app-header {
+  height: 56px;
+  padding: 0 24px;
+  background: #141824;
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff8a00, #e52e71);
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  font-weight: 700;
+  font-size: 16px;
 }
 
-.App-link {
-  color: #61dafb;
+.app-title-block {
+  display: flex;
+  flex-direction: column;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.app-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.app-subtitle {
+  font-size: 12px;
+  opacity: 0.78;
+}
+
+/* Main layout 2 cột */
+.app-layout {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px 20px 20px;
+  height: calc(100vh - 56px);
+}
+
+/* Sidebar trái */
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Panel chung */
+.app-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2e4f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.app-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.app-panel-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(25, 118, 210, 0.08);
+  color: #1554a3;
+}
+
+/* Search form */
+.search-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 7px 9px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+
+.search-button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #1976d2;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.search-button:hover:not(:disabled) {
+  background: #145aa3;
+}
+
+.search-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* Error text */
+.error-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #d32f2f;
+}
+
+/* Danh sách quán */
+.cafe-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.cafe-item {
+  padding: 8px 6px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.cafe-item:hover {
+  background: #f3f4ff;
+  transform: translateY(-1px);
+}
+
+.cafe-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cafe-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cafe-address {
+  font-size: 12px;
+  color: #4b5563;
+  margin-top: 2px;
+}
+
+.cafe-meta-row {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.meta-pill {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f3f4ff;
+  color: #4b5563;
+}
+
+/* Map panel */
+.map-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e4f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-header {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid #e2e4f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.map-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.map-subtitle {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.map-wrapper {
+  flex: 1;
+  min-height: 320px;
+}
+
+/* Responsive: màn nhỏ thì xếp dọc */
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
   }
-  to {
-    transform: rotate(360deg);
+
+  .map-wrapper {
+    height: 360px;
   }
+
+  .cafe-list {
+    max-height: 260px;
+  }
+}
+
+.current-location-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #1976d2;
+  border: 3px solid #e0f2fe;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.3);
+}
+
+/* Nút GPS */
+.gps-button {
+  border: none;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gps-button:hover {
+  background: #115e59;
 }
