@@ -7,6 +7,7 @@ const mapRoutes = require('./api/map');
 
 // Sử dụng CORS để cho phép frontend truy cập API
 app.use(cors());
+app.use(express.json());
 
 // Cấu hình các route
 app.use('/api/cafes', cafeRoutes);

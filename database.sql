@@ -3,67 +3,92 @@
 -- ============================================
 
 DROP TABLE IF EXISTS cafes;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS favorites;
+DROP TABLE IF EXISTS search_history;
+DROP TABLE IF EXISTS cafe_reviews;
+DROP TABLE IF EXISTS cafe_photos;
+DROP INDEX IF EXISTS idx_users_username_unique;
+DROP INDEX IF EXISTS idx_search_history_user_created;
 
 CREATE TABLE cafes (
   id SERIAL PRIMARY KEY,
+
+  -- Tên quán
   name VARCHAR(255) NOT NULL,
+
+  -- Địa chỉ từ Goong (formatted_address)
   address TEXT,
+
+  -- Tọa độ
   lat DOUBLE PRECISION NOT NULL,
   lng DOUBLE PRECISION NOT NULL,
-  rating NUMERIC(2,1),
-  open_time VARCHAR(20),
-  close_time VARCHAR(20),
+
+  -- Goong place_id để tránh trùng và tiện cho việc update
+  place_id TEXT UNIQUE,
+
+  -- Ảnh đại diện (Goong không trả ảnh)
   image_url TEXT,
+
+  -- Mô tả (tự thêm hoặc để user nhập)
   description TEXT,
+
+  -- Nguồn dữ liệu (goong, manual…)
+  source VARCHAR(50) DEFAULT 'goong',
+
+  -- Thời điểm đồng bộ với Goong
+  last_synced_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE users (
-    id              BIGSERIAL PRIMARY KEY,
-    username        VARCHAR(100),
-    email           VARCHAR(150) UNIQUE NOT NULL,
-    password_hash   TEXT NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- CREATE TABLE users (
+--     id              BIGSERIAL PRIMARY KEY,
+--     username        VARCHAR(100),
+--     email           VARCHAR(150) UNIQUE NOT NULL,
+--     password_hash   TEXT NOT NULL,
+--     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique
-    ON users (username);
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_unique
+--     ON users (username);
 
-CREATE TABLE favorites (
-    id          BIGSERIAL PRIMARY KEY,
-    user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- CREATE TABLE favorites (
+--     id          BIGSERIAL PRIMARY KEY,
+--     user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--     cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+--     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
 
-CREATE TABLE search_history (
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    keyword         VARCHAR(255),
-    location_lat    DOUBLE PRECISION,
-    location_lng    DOUBLE PRECISION,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- CREATE TABLE search_history (
+--     id              BIGSERIAL PRIMARY KEY,
+--     user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--     keyword         VARCHAR(255),
+--     location_lat    DOUBLE PRECISION,
+--     location_lng    DOUBLE PRECISION,
+--     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
 
-CREATE INDEX IF NOT EXISTS idx_search_history_user_created
-    ON search_history (user_id, created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_search_history_user_created
+--     ON search_history (user_id, created_at DESC);
 
-CREATE TABLE cafe_reviews (
-    id          BIGSERIAL PRIMARY KEY,
-    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
-    user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    rating      INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-    comment     TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- CREATE TABLE cafe_reviews (
+--     id          BIGSERIAL PRIMARY KEY,
+--     cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+--     user_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--     rating      INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+--     comment     TEXT,
+--     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
 
-CREATE TABLE cafe_photos (
-    id          BIGSERIAL PRIMARY KEY,
-    cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
-    photo_url   TEXT NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- CREATE TABLE cafe_photos (
+--     id          BIGSERIAL PRIMARY KEY,
+--     cafe_id     VARCHAR(100) NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+--     photo_url   TEXT NOT NULL,
+--     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
 -- ============================================
 -- SAMPLE DATA (Hanoi – 20+ cafes)
 -- ============================================
