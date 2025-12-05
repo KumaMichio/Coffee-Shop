@@ -304,3 +304,22 @@ body {
 .gps-button:hover {
   background: #115e59;
 }
+
+.search-select {
+  padding: 7px 9px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  background: #fff;
+}
+
+.favorite-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #e11d48;
+  font-size: 16px;
+}
+.favorite-btn:hover {
+  transform: scale(1.1);
+}

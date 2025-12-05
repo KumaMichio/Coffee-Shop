@@ -1,8 +1,21 @@
-// src/config.js
-require('dotenv').config();  // Đảm bảo gọi dòng này trước khi sử dụng các biến môi trường
+// backend/src/config.js
+require('dotenv').config();
 
-const port = process.env.PORT || 5001;
-const dbUri = process.env.DB_URI;
+const config = {
+  port: process.env.PORT || 5001,
+  db: {
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME || 'coffee_app',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres'
+  },
+  goong: {
+    restApiKey: process.env.GOONG_REST_API_KEY || ''
+  },
+  google: {
+    placesApiKey: process.env.GOOGLE_PLACES_API_KEY || ''
+  }
+};
 
-console.log(`Server running on port ${port}`);
-console.log(`Database URI: ${dbUri}`);
+module.exports = config;

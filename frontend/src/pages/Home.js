@@ -8,81 +8,162 @@ function Home() {
   const [center, setCenter] = useState(null);
   const [cafes, setCafes] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [searchKeyword, setSearchKeyword] = useState('');      // NEW
-  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [sort, setSort] = useState('rating');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mode, setMode] = useState('nearby'); // 'nearby' | 'search'
 
-  // load dữ liệu ban đầu
+  // load initial: thử lấy vị trí hiện tại → nearby 2km
   useEffect(() => {
-    const loadInitial = async () => {
+    const init = async () => {
       try {
         setError('');
-        const [loc, list] = await Promise.all([
-          apiService.getCurrentLocation(),
-          apiService.getCafes()
-        ]);
-        setCenter({ lat: loc.lat, lng: loc.lng });
+        // fallback center: Hà Nội
+        let centerLat = 21.028511;
+        let centerLng = 105.804817;
+
+        if (navigator.geolocation) {
+          await new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const { latitude, longitude } = pos.coords;
+                centerLat = latitude;
+                centerLng = longitude;
+                setCurrentLocation({ lat: latitude, lng: longitude });
+                resolve();
+              },
+              () => resolve(),
+              { enableHighAccuracy: true, timeout: 7000 }
+            );
+          });
+        }
+
+        setCenter({ lat: centerLat, lng: centerLng });
+        setLoading(true);
+        const list = await apiService.getNearbyCafes({
+          lat: centerLat,
+          lng: centerLng,
+          radius: 2000,
+          sort: 'distance'
+        });
         setCafes(list);
+        setMode('nearby');
+        setSort('distance');
       } catch (err) {
         console.error(err);
-        setError('Không thể tải dữ liệu ban đầu');
+        setError('Không thể tải dữ liệu ban đầu.');
+      } finally {
+        setLoading(false);
       }
     };
-    loadInitial();
+
+    init();
   }, []);
 
-  // 🔍 Xử lý khi user bấm nút Tìm kiếm
-  const handleSearch = async (keywordFromInput) => {
-    const keyword = (keywordFromInput ?? searchKeyword).trim();
+  // Khi user bấm Tìm kiếm
+  const handleSearch = async (keyword) => {
+    const q = keyword ?? searchKeyword;
+    const trimmed = q.trim();
 
-    // Nếu ô tìm kiếm trống → reset danh sách quán
-    if (!keyword) {
-      try {
-        setLoadingSearch(true);
-        setError('');
-        const list = await apiService.getCafes();
-        setCafes(list);
-        // không đổi center, giữ nguyên map đang xem
-      } catch (err) {
-        console.error(err);
-        setError('Không thể tải lại danh sách quán cà phê');
-      } finally {
-        setLoadingSearch(false);
+    if (!trimmed) {
+      // ô rỗng → quay lại nearby (nếu có currentLocation)
+      if (currentLocation) {
+        await handleLocateMe();
       }
       return;
     }
 
-    // Normal search
     try {
-      setLoadingSearch(true);
+      setLoading(true);
       setError('');
-      const result = await apiService.searchCafes(keyword);
-      setCafes(result);
-      if (result.length > 0) {
-        setCenter({ lat: result[0].lat, lng: result[0].lng });
+      const list = await apiService.searchCafes({
+        query: trimmed,
+        lat: currentLocation?.lat,
+        lng: currentLocation?.lng,
+        sort
+      });
+      setCafes(list);
+      if (list.length > 0) {
+        setCenter({ lat: list[0].lat, lng: list[0].lng });
       }
+      setMode('search');
+      setSearchKeyword(trimmed);
     } catch (err) {
       console.error(err);
       setError('Lỗi khi tìm kiếm quán cà phê');
     } finally {
-      setLoadingSearch(false);
+      setLoading(false);
     }
   };
 
-  // 📝 Ghi nhận từ khóa mỗi khi user gõ, và nếu xoá hết → tự reset danh sách
+  // Khi user gõ trong ô search
   const handleKeywordChange = async (value) => {
     setSearchKeyword(value);
-
     if (value.trim() === '') {
-      // ô tìm kiếm vừa bị xóa hết → load lại list
-      try {
-        setError('');
-        const list = await apiService.getCafes();
-        setCafes(list);
-      } catch (err) {
-        console.error(err);
-        setError('Không thể tải lại danh sách quán cà phê');
+      // reset: quay lại nearby (nếu có vị trí)
+      if (currentLocation) {
+        await handleLocateMe();
       }
+    }
+  };
+
+  // Khi user đổi sort
+  const handleSortChange = async (value) => {
+    setSort(value);
+    // re-run search/nearby với sort mới
+    if (mode === 'search' && searchKeyword.trim()) {
+      await handleSearch(searchKeyword);
+    } else if (mode === 'nearby' && currentLocation) {
+      await handleLocateMe(value);
+    }
+  };
+
+  // Lấy quán gần "vị trí của tôi" trong 2km
+  const handleLocateMe = async (sortOverride) => {
+    if (!navigator.geolocation && !currentLocation) {
+      setError('Trình duyệt của bạn không hỗ trợ GPS.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      let loc = currentLocation;
+
+      if (!loc && navigator.geolocation) {
+        loc = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) =>
+              resolve({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude
+              }),
+            (err) => reject(err),
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        });
+        setCurrentLocation(loc);
+      }
+
+      const s = sortOverride || 'distance';
+      const list = await apiService.getNearbyCafes({
+        lat: loc.lat,
+        lng: loc.lng,
+        radius: 2000,
+        sort: s
+      });
+
+      setCafes(list);
+      setCenter({ lat: loc.lat, lng: loc.lng });
+      setMode('nearby');
+      setSort(s);
+    } catch (err) {
+      console.error('Locate me error', err);
+      setError('Không thể lấy vị trí hiện tại hoặc dữ liệu quán gần bạn.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,45 +171,34 @@ function Home() {
     setCenter({ lat: cafe.lat, lng: cafe.lng });
   };
 
-  const handleLocateMe = () => {
-    if (!navigator.geolocation) {
-      setError('Trình duyệt của bạn không hỗ trợ chức năng GPS.');
-      return;
+  const handleSaveFavorite = async (cafe) => {
+    try {
+      await apiService.saveFavoriteCafe({
+        provider: cafe.provider,
+        provider_place_id: cafe.provider_place_id,
+        name: cafe.name,
+        address: cafe.address,
+        lat: cafe.lat,
+        lng: cafe.lng,
+        rating: cafe.rating,
+        user_rating_count: cafe.user_rating_count
+      });
+      // không bắt buộc reload, nhưng có thể show toast sau này
+    } catch (err) {
+      console.error(err);
+      setError('Không thể lưu quán yêu thích.');
     }
-    setError('');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const loc = { lat: latitude, lng: longitude };
-        setCurrentLocation(loc);
-        setCenter(loc);
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        let message = 'Không thể lấy vị trí hiện tại.';
-        if (err.code === err.PERMISSION_DENIED) {
-          message = 'Bạn đã từ chối quyền truy cập vị trí (GPS).';
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          message = 'Thông tin vị trí hiện không khả dụng.';
-        } else if (err.code === err.TIMEOUT) {
-          message = 'Hết thời gian chờ khi lấy vị trí.';
-        }
-        setError(message);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
   };
 
   return (
     <>
-      {/* header + layout giống bản trước của mình */}
       <header className="app-header">
         <div className="app-header-left">
           <div className="app-logo">CF</div>
           <div className="app-title-block">
             <div className="app-title">Coffee Finder – Hanoi</div>
             <div className="app-subtitle">
-              Tìm quán cà phê quanh bạn & xem trên bản đồ Goong
+              Tìm quán cà phê quanh bạn từ Goong & Google Maps
             </div>
           </div>
         </div>
@@ -139,26 +209,29 @@ function Home() {
           <div className="app-panel">
             <div className="app-panel-header">
               <span className="app-panel-title">Tìm kiếm quán cà phê</span>
-              <span className="app-badge">Search</span>
+              <span className="app-badge">
+                {mode === 'search' ? 'Search' : 'Nearby 2km'}
+              </span>
             </div>
             <SearchBar
               onSearch={handleSearch}
-              onChangeKeyword={handleKeywordChange}   // NEW
-              loading={loadingSearch}
+              onChangeKeyword={handleKeywordChange}
+              loading={loading}
+              sort={sort}
+              onChangeSort={handleSortChange}
             />
-            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 className="gps-button"
-                onClick={handleLocateMe}
+                onClick={() => handleLocateMe()}
               >
-                📍 Vị trí của tôi
+                📍 Vị trí của tôi (2km)
               </button>
             </div>
             {error && <p className="error-text">{error}</p>}
           </div>
 
-          {/* danh sách quán giữ nguyên như trước */}
           <div className="app-panel">
             <div className="app-panel-header">
               <span className="app-panel-title">Danh sách quán</span>
@@ -167,23 +240,41 @@ function Home() {
             <ul className="cafe-list">
               {cafes.map((cafe) => (
                 <li
-                  key={cafe.id}
+                  key={`${cafe.provider}:${cafe.provider_place_id}`}
                   className="cafe-item"
                   onClick={() => handleSelectCafe(cafe)}
                 >
                   <div className="cafe-name-row">
                     <div className="cafe-name">{cafe.name}</div>
+                    <button
+                      type="button"
+                      className="favorite-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveFavorite(cafe);
+                      }}
+                    >
+                      ♥
+                    </button>
                   </div>
                   <div className="cafe-address">{cafe.address}</div>
                   <div className="cafe-meta-row">
                     {cafe.rating && (
                       <span className="meta-pill">⭐ {cafe.rating}</span>
                     )}
-                    {cafe.open_time && cafe.close_time && (
+                    {cafe.user_rating_count && (
                       <span className="meta-pill">
-                        ⏰ {cafe.open_time}–{cafe.close_time}
+                        👥 {cafe.user_rating_count} đánh giá
                       </span>
                     )}
+                    {cafe.distance != null && (
+                      <span className="meta-pill">
+                        📍 {(cafe.distance / 1000).toFixed(2)} km
+                      </span>
+                    )}
+                    <span className="meta-pill">
+                      {cafe.provider === 'google' ? 'Google' : 'Goong'}
+                    </span>
                   </div>
                 </li>
               ))}
@@ -201,7 +292,7 @@ function Home() {
             <div className="map-header-left">
               <span className="map-title">Bản đồ quán cà phê</span>
               <span className="map-subtitle">
-                Nhấp vào quán trong danh sách hoặc dùng “Vị trí của tôi”
+                Marker màu xanh là vị trí của bạn, marker xám là các quán.
               </span>
             </div>
           </div>
