@@ -1,10 +1,19 @@
 // src/pages/Home.js
 import React, { useEffect, useState } from 'react';
+import { Button, message } from 'antd';
+import { LogoutOutlined, HeartOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import MapView from '../components/MapView';
 import SearchBar from '../components/SearchBar';
 import apiService from '../services/apiService';
+import authService from '../services/authService';
+
+
+// Configure message globally
+
 
 function Home() {
+  const navigate = useNavigate();
   const [center, setCenter] = useState(null);
   const [cafes, setCafes] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -13,6 +22,17 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState('nearby'); // 'nearby' | 'search'
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const handleLogout = () => {
+    authService.logout();
+    message.success('Đã đăng xuất');
+    navigate('/auth');
+  };
+
+  const handleGoToFavorites = () => {
+    navigate('/favorites');
+  };
 
   // load initial: thử lấy vị trí hiện tại → nearby 2km
   useEffect(() => {
@@ -151,7 +171,7 @@ function Home() {
       const list = await apiService.getNearbyCafes({
         lat: loc.lat,
         lng: loc.lng,
-        radius: 2000,
+        radius: 10000,
         sort: s
       });
 
@@ -183,15 +203,42 @@ function Home() {
         rating: cafe.rating,
         user_rating_count: cafe.user_rating_count
       });
-      // không bắt buộc reload, nhưng có thể show toast sau này
+      messageApi.success({
+        content: `✅ Đã thêm "${cafe.name}" vào danh sách yêu thích`,
+        duration: 5,
+        style: {
+          marginTop: '2vh',
+          fontSize: '16px',
+        },
+      });
     } catch (err) {
       console.error(err);
-      setError('Không thể lưu quán yêu thích.');
+      if (err.message === 'Not authenticated') {
+        messageApi.error({
+          content: '🔒 Vui lòng đăng nhập để lưu yêu thích',
+          duration: 5,
+          style: {
+            marginTop: '20vh',
+            fontSize: '16px',
+          },
+        });
+        navigate('/auth');
+      } else {
+        messageApi.error({
+          content: '❌ Không thể lưu quán yêu thích',
+          duration: 5,
+          style: {
+            marginTop: '20vh',
+            fontSize: '16px',
+          },
+        });
+      }
     }
   };
 
   return (
     <>
+      {contextHolder}
       <header className="app-header">
         <div className="app-header-left">
           <div className="app-logo">CF</div>
@@ -210,7 +257,7 @@ function Home() {
             <div className="app-panel-header">
               <span className="app-panel-title">Tìm kiếm quán cà phê</span>
               <span className="app-badge">
-                {mode === 'search' ? 'Search' : 'Nearby 2km'}
+                {mode === 'search' ? 'Search' : 'Nearby 10km'}
               </span>
             </div>
             <SearchBar
@@ -226,7 +273,7 @@ function Home() {
                 className="gps-button"
                 onClick={() => handleLocateMe()}
               >
-                📍 Vị trí của tôi (2km)
+                📍 Vị trí của tôi (10km)
               </button>
             </div>
             {error && <p className="error-text">{error}</p>}
@@ -269,7 +316,7 @@ function Home() {
                     )}
                     {cafe.distance != null && (
                       <span className="meta-pill">
-                        📍 {(cafe.distance / 1000).toFixed(2)} km
+                        📍 {cafe.distance.toFixed(2)} km
                       </span>
                     )}
                     <span className="meta-pill">
@@ -294,6 +341,21 @@ function Home() {
               <span className="map-subtitle">
                 Marker màu xanh là vị trí của bạn, marker xám là các quán.
               </span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button 
+                type="primary" 
+                icon={<HeartOutlined />}
+                onClick={handleGoToFavorites}
+              >
+                Yêu thích
+              </Button>
+              <Button 
+                icon={<LogoutOutlined />}
+                onClick={handleLogout}
+              >
+                Đăng xuất
+              </Button>
             </div>
           </div>
           <MapView

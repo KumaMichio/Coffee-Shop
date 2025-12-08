@@ -1,5 +1,5 @@
 // frontend/src/services/apiService.js
-const API_BASE = process.env.REACT_APP_API_BASE || '';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 const apiService = {
   // lấy toàn bộ quán trong DB (yêu thích / đã lưu)
@@ -10,7 +10,12 @@ const apiService = {
   },
 
   getFavorites: async () => {
-    const res = await fetch(`${API_BASE}/api/cafes/favorites`);
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Not authenticated');
+    
+    const res = await fetch(`${API_BASE}/api/favorites`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
     if (!res.ok) throw new Error('Failed to fetch favorites');
     return res.json();
   },
@@ -41,11 +46,17 @@ const apiService = {
     return res.json();
   },
 
-  // lưu 1 quán yêu thích vào DB
+  // lưu 1 quán yêu thích vào DB (cần authentication)
   saveFavoriteCafe: async (cafe) => {
-    const res = await fetch(`${API_BASE}/api/cafes/favorites`, {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Not authenticated');
+    
+    const res = await fetch(`${API_BASE}/api/favorites`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(cafe)
     });
     if (!res.ok) throw new Error('Failed to save favorite cafe');
