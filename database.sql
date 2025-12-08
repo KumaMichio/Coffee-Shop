@@ -6,7 +6,9 @@
 -- CREATE DATABASE coffee_app;
 
 -- Sau đó kết nối vào database coffee_app và chạy phần còn lại:
-
+DROP DATABASE IF EXISTS coffee_app;
+CREATE DATABASE coffee_app;
+\c coffee_app
 -- ============================
 -- USERS TABLE (Xác thực)
 -- ============================
