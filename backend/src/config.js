@@ -8,7 +8,7 @@ const config = {
     port: Number(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME || 'coffee_app',
     user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres'
+    password: String(process.env.DB_PASSWORD || 'postgres')
   },
   goong: {
     restApiKey: process.env.GOONG_REST_API_KEY || ''

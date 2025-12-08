@@ -1,27 +1,63 @@
 -- ============================
 -- DROP & CREATE TABLES
 -- ============================
-DROP DATABASE IF EXISTS coffee_app;
-CREATE DATABASE coffee_app;
-\c coffee_app;
+-- Chạy câu lệnh này riêng trước:
+-- DROP DATABASE IF EXISTS coffee_app;
+-- CREATE DATABASE coffee_app;
 
--- Các quán cà phê được lưu khi user đánh dấu "yêu thích" hoặc lưu từ kết quả search
+-- Sau đó kết nối vào database coffee_app và chạy phần còn lại:
+
+-- ============================
+-- USERS TABLE (Xác thực)
+-- ============================
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index cho tìm kiếm nhanh
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+-- ============================
+-- CAFES TABLE
+-- ============================
+-- Các quán cà phê được lưu từ kết quả tìm kiếm hoặc yêu thích
 CREATE TABLE cafes (
   id SERIAL PRIMARY KEY,
-  provider        VARCHAR(20) NOT NULL,             -- 'goong' | 'google'
-  provider_place_id VARCHAR(128) NOT NULL,          -- id của place bên provider
-  name            TEXT NOT NULL,
-  address         TEXT,
-  lat             DOUBLE PRECISION NOT NULL,
-  lng             DOUBLE PRECISION NOT NULL,
-  rating          NUMERIC(2,1),
+  provider VARCHAR(20) NOT NULL,             -- 'goong' | 'google'
+  provider_place_id TEXT NOT NULL,           -- id của place bên provider (dùng TEXT vì có thể dài)
+  name TEXT NOT NULL,
+  address TEXT,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  rating NUMERIC(2,1),
   user_rating_count INTEGER,
-  is_favorite     BOOLEAN NOT NULL DEFAULT TRUE,    -- mặc định là quán yêu thích
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(provider, provider_place_id)
 );
 
--- Index hỗ trợ query theo vị trí nếu cần sau này
+-- Index hỗ trợ query theo vị trí
 CREATE INDEX IF NOT EXISTS idx_cafes_lat_lng ON cafes(lat, lng);
-CREATE INDEX IF NOT EXISTS idx_cafes_favorite ON cafes(is_favorite);
+
+-- ============================
+-- FAVORITES TABLE (Yêu thích)
+-- ============================
+-- Bảng trung gian: user yêu thích cafe nào
+CREATE TABLE favorites (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cafe_id INTEGER NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, cafe_id)  -- Mỗi user chỉ yêu thích 1 lần
+);
+
+-- Index cho query nhanh
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_cafe_id ON favorites(cafe_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_cafe ON favorites(user_id, cafe_id);

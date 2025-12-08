@@ -118,8 +118,8 @@ router.post('/favorites', async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO cafes
-        (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count, is_favorite)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE)
+        (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        ON CONFLICT (provider, provider_place_id)
        DO UPDATE SET
           name = EXCLUDED.name,
@@ -128,7 +128,6 @@ router.post('/favorites', async (req, res) => {
           lng = EXCLUDED.lng,
           rating = EXCLUDED.rating,
           user_rating_count = EXCLUDED.user_rating_count,
-          is_favorite = TRUE,
           updated_at = NOW()
        RETURNING *`,
       [
