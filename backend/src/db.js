@@ -11,12 +11,17 @@ const pool = new Pool({
 });
 
 // Kiểm tra kết nối
-pool.connect((err, client, done) => {
+pool.connect((err, client, release) => {
   if (err) {
-    console.error('Error connecting to PostgreSQL', err.stack);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error connecting to PostgreSQL', err.stack);
+    }
   } else {
-    console.log('Connected to PostgreSQL');
-    done();
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Connected to PostgreSQL');
+    }
+    // trả client về pool
+    release();
   }
 });
 

@@ -4,6 +4,12 @@ import { List, Card, Button, message, Empty, Spin, Rate } from 'antd';
 import { HeartFilled, EnvironmentOutlined } from '@ant-design/icons';
 import favoriteService from '../services/favoriteService';
 
+// Helper function để tạo Google Maps Directions URL
+const getGoogleMapsDirectionsUrl = (cafe) => {
+  const destination = `${cafe.lat},${cafe.lng}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+};
+
 const FavoritesList = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +86,14 @@ const FavoritesList = () => {
               justifyContent: 'space-between'
             }}
             actions={[
+              <Button
+                type="link"
+                icon={<EnvironmentOutlined />}
+                onClick={() => window.open(getGoogleMapsDirectionsUrl(cafe), '_blank')}
+                key="directions"
+              >
+                Chỉ đường
+              </Button>,
               <Button
                 type="text"
                 danger

@@ -52,12 +52,37 @@ function normalizePlace({
 
 // ===== Goong APIs =====
 
+// Helper: delay function
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper: retry với exponential backoff
+async function fetchWithRetry(url, maxRetries = 2, delayMs = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        // Rate limited - wait longer
+        const waitTime = delayMs * Math.pow(2, i);
+        console.warn(`Rate limited (429), waiting ${waitTime}ms before retry ${i + 1}/${maxRetries}`);
+        await delay(waitTime);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+      await delay(delayMs * Math.pow(2, i));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 // Nearby cafés từ Goong quanh (lat,lng)
 async function searchNearbyFromGoong(lat, lng, radiusMeters, keyword) {
   if (!goong.restApiKey) return [];
 
-  // Nếu không có keyword, tìm với nhiều từ khóa mặc định để bắt các tên khác nhau
-  const defaultKeywords = ['cafe', 'cà phê', 'coffee', 'coffee house', 'highland', 'highlands', 'phê', 'phê la'];
+  // Giảm số keywords mặc định để tránh rate limit
+  // Chỉ dùng 2-3 keywords quan trọng nhất
+  const defaultKeywords = keyword ? [] : ['cafe', 'cà phê'];
   const keywords = keyword
     ? Array.isArray(keyword)
       ? keyword
@@ -67,74 +92,98 @@ async function searchNearbyFromGoong(lat, lng, radiusMeters, keyword) {
   try {
     const placeMap = new Map(); // key: place_id -> normalized place
 
-    // Với mỗi keyword, gọi AutoComplete và lấy detail cho mỗi place_id
-    await Promise.all(
-      keywords.map(async (kw) => {
-        try {
-          const url = new URL('https://rsapi.goong.io/Place/AutoComplete');
-          url.searchParams.set('input', kw);
-          url.searchParams.set('location', `${lat},${lng}`);
-          url.searchParams.set('radius', radiusMeters || 2000);
-          url.searchParams.set('api_key', goong.restApiKey);
+    // Sequential requests thay vì parallel để tránh rate limit
+    for (let i = 0; i < keywords.length; i++) {
+      const kw = keywords[i];
+      
+      // Delay giữa các requests
+      if (i > 0) {
+        await delay(300); // 300ms delay giữa các keyword requests
+      }
 
-          const res = await fetch(url.toString());
-          if (!res.ok) {
-            console.error('Goong API error for', kw, res.status);
-            return;
+      try {
+        const url = new URL('https://rsapi.goong.io/Place/AutoComplete');
+        url.searchParams.set('input', kw);
+        url.searchParams.set('location', `${lat},${lng}`);
+        url.searchParams.set('radius', radiusMeters || 2000);
+        url.searchParams.set('api_key', goong.restApiKey);
+
+        const res = await fetchWithRetry(url.toString());
+        if (!res.ok) {
+          if (res.status === 429) {
+            console.warn('Goong API rate limited for', kw, '- skipping this keyword');
+            continue; // Skip keyword này nếu bị rate limit
+          }
+          console.error('Goong API error for', kw, res.status);
+          continue;
+        }
+
+        const data = await res.json();
+        const predictions = data.predictions || [];
+
+        // Giảm số predictions xuống 5 thay vì 10
+        const limitedPredictions = predictions.slice(0, 5);
+
+        // Sequential detail requests với delay
+        for (let j = 0; j < limitedPredictions.length; j++) {
+          const p = limitedPredictions[j];
+          
+          // Delay giữa các detail requests
+          if (j > 0) {
+            await delay(200); // 200ms delay giữa các detail requests
           }
 
-          const data = await res.json();
-          const predictions = data.predictions || [];
+          try {
+            if (!p.place_id) continue;
+            if (placeMap.has(p.place_id)) continue; // đã lấy rồi
 
-          // Lấy tối đa 10 predictions cho mỗi keyword
-          await Promise.all(
-            predictions.slice(0, 10).map(async (p) => {
-              try {
-                if (!p.place_id) return;
-                if (placeMap.has(p.place_id)) return; // đã lấy rồi
+            const detailUrl = new URL('https://rsapi.goong.io/Place/Detail');
+            detailUrl.searchParams.set('place_id', p.place_id);
+            detailUrl.searchParams.set('api_key', goong.restApiKey);
 
-                const detailUrl = new URL('https://rsapi.goong.io/Place/Detail');
-                detailUrl.searchParams.set('place_id', p.place_id);
-                detailUrl.searchParams.set('api_key', goong.restApiKey);
-
-                const detailRes = await fetch(detailUrl.toString());
-                if (!detailRes.ok) return;
-
-                const detailData = await detailRes.json();
-                const result = detailData.result;
-
-                if (result && result.geometry && result.geometry.location) {
-                  const placeLat = result.geometry.location.lat;
-                  const placeLng = result.geometry.location.lng;
-
-                  const normalized = normalizePlace({
-                    provider: 'goong',
-                    place: {
-                      id: p.place_id,
-                      name: result.name || p.structured_formatting?.main_text || p.description,
-                      address: result.formatted_address || p.description,
-                      rating: result.rating || null,
-                      user_ratings_total: result.user_ratings_total || null
-                    },
-                    lat: placeLat,
-                    lng: placeLng,
-                    centerLat: lat,
-                    centerLng: lng
-                  });
-
-                  // Lọc theo bán kính ở đây nếu muốn, nhưng chúng ta vẫn tính distance ở normalizePlace.
-                  placeMap.set(p.place_id, normalized);
-                }
-              } catch (err) {
-                console.error('Error fetching Goong place detail:', err.message);
+            const detailRes = await fetchWithRetry(detailUrl.toString());
+            if (!detailRes.ok) {
+              if (detailRes.status === 429) {
+                console.warn('Goong Detail API rate limited for place', p.place_id);
+                continue; // Skip place này nếu bị rate limit
               }
-            })
-          );
-        } catch (err) {
-          console.error('Goong AutoComplete error for', kw, err.message);
+              continue;
+            }
+
+            const detailData = await detailRes.json();
+            const result = detailData.result;
+
+            if (result && result.geometry && result.geometry.location) {
+              const placeLat = result.geometry.location.lat;
+              const placeLng = result.geometry.location.lng;
+
+              const normalized = normalizePlace({
+                provider: 'goong',
+                place: {
+                  id: p.place_id,
+                  name: result.name || p.structured_formatting?.main_text || p.description,
+                  address: result.formatted_address || p.description,
+                  rating: result.rating || null,
+                  user_ratings_total: result.user_ratings_total || null
+                },
+                lat: placeLat,
+                lng: placeLng,
+                centerLat: lat,
+                centerLng: lng
+              });
+
+              placeMap.set(p.place_id, normalized);
+            }
+          } catch (err) {
+            console.error('Error fetching Goong place detail:', err.message);
+            // Continue với place tiếp theo
+          }
         }
-      })
-    );
+      } catch (err) {
+        console.error('Goong AutoComplete error for', kw, err.message);
+        // Continue với keyword tiếp theo
+      }
+    }
 
     return Array.from(placeMap.values());
   } catch (error) {
@@ -148,32 +197,32 @@ async function searchNearbyFromGoong(lat, lng, radiusMeters, keyword) {
 async function searchNearbyFromGoogle(lat, lng, radiusMeters, keyword) {
   if (!google.placesApiKey) return [];
 
-  // Nếu không có keyword, sử dụng nhiều từ khóa mặc định
-  const defaultKeywords = ['cafe', 'cà phê', 'coffee', 'coffee house', 'highland', 'highlands', 'phê', 'phê la'];
-  const keywords = keyword
-    ? Array.isArray(keyword)
-      ? keyword
-      : [keyword]
-    : defaultKeywords;
-
   try {
     const placeMap = new Map(); // place_id -> normalized place
 
-    // Thêm một lần gọi chỉ theo type 'cafe' để bắt các kết quả loại cafe
+    // Chỉ gọi 1 request với type='cafe' thay vì nhiều keywords
+    // Google Places API có thể trả về nhiều kết quả với type='cafe'
     const baseUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
     baseUrl.searchParams.set('location', `${lat},${lng}`);
     baseUrl.searchParams.set('radius', radiusMeters || 2000);
+    baseUrl.searchParams.set('type', 'cafe');
     baseUrl.searchParams.set('key', google.placesApiKey);
 
-    // Gọi thêm 1 request base với type=cafe
+    // Nếu có keyword, thêm vào query
+    if (keyword) {
+      baseUrl.searchParams.set('keyword', keyword);
+    }
+
     try {
-      const url = new URL(baseUrl.toString());
-      url.searchParams.set('type', 'cafe');
-      const res = await fetch(url.toString());
+      const res = await fetchWithRetry(baseUrl.toString());
       if (res.ok) {
         const data = await res.json();
         const results = data.results || [];
-        for (const place of results) {
+        
+        // Giới hạn số lượng results để tránh quá nhiều data
+        const limitedResults = results.slice(0, 20);
+        
+        for (const place of limitedResults) {
           const pid = place.place_id || `${place.geometry?.location?.lat}_${place.geometry?.location?.lng}_${place.name}`;
           if (!pid || placeMap.has(pid)) continue;
           placeMap.set(pid, normalizePlace({
@@ -185,45 +234,12 @@ async function searchNearbyFromGoogle(lat, lng, radiusMeters, keyword) {
             centerLng: lng
           }));
         }
+      } else if (res.status === 429) {
+        console.warn('Google Places API rate limited');
       }
     } catch (err) {
-      console.error('Google base nearbysearch error:', err.message);
+      console.error('Google Places API error:', err.message);
     }
-
-    // Sau đó gọi theo từng keyword để bắt các tên khác nhau
-    await Promise.all(
-      keywords.map(async (kw) => {
-        try {
-          const url = new URL(baseUrl.toString());
-          // Không set type ở đây để keyword có thể match tên
-          url.searchParams.set('keyword', kw);
-
-          const res = await fetch(url.toString());
-          if (!res.ok) {
-            console.error('Google Places error for', kw, res.status);
-            return;
-          }
-
-          const data = await res.json();
-          const results = data.results || [];
-
-          for (const place of results) {
-            const pid = place.place_id || `${place.geometry?.location?.lat}_${place.geometry?.location?.lng}_${place.name}`;
-            if (!pid || placeMap.has(pid)) continue;
-            placeMap.set(pid, normalizePlace({
-              provider: 'google',
-              place,
-              lat: place.geometry.location.lat,
-              lng: place.geometry.location.lng,
-              centerLat: lat,
-              centerLng: lng
-            }));
-          }
-        } catch (err) {
-          console.error('Google nearbysearch error for', kw, err.message);
-        }
-      })
-    );
 
     return Array.from(placeMap.values());
   } catch (error) {

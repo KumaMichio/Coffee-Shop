@@ -30,8 +30,14 @@ const apiService = {
     }
     if (sort) params.set('sort', sort);
     const res = await fetch(`${API_BASE}/api/cafes/search?` + params.toString());
-    if (!res.ok) throw new Error('Failed to search cafes');
-    return res.json();
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Search cafes error:', res.status, errorText);
+      throw new Error(`Failed to search cafes: ${res.status}`);
+    }
+    const data = await res.json();
+    // Ensure we return an array
+    return Array.isArray(data) ? data : [];
   },
 
   // lấy quán gần vị trí hiện tại trong bán kính radius (m)
@@ -42,8 +48,14 @@ const apiService = {
     params.set('radius', radius);
     params.set('sort', sort);
     const res = await fetch(`${API_BASE}/api/cafes/nearby?` + params.toString());
-    if (!res.ok) throw new Error('Failed to fetch nearby cafes');
-    return res.json();
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Get nearby cafes error:', res.status, errorText);
+      throw new Error(`Failed to fetch nearby cafes: ${res.status}`);
+    }
+    const data = await res.json();
+    // Ensure we return an array
+    return Array.isArray(data) ? data : [];
   },
 
   // lưu 1 quán yêu thích vào DB (cần authentication)

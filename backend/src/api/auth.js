@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -17,49 +18,50 @@ function isValidEmail(email) {
 // POST /api/auth/register - Đăng ký tài khoản mới
 router.post('/register', async (req, res) => {
   try {
+    // sửa lỗi destructuring: bỏ ký tự |
     const { username, email, password } = req.body;
 
     // Validate input
     if (!username || !email || !password) {
-      return res.status(400).json({ 
-        error: 'Vui lòng điền đầy đủ thông tin' 
+      return res.status(400).json({
+        error: 'Vui lòng điền đầy đủ thông tin'
       });
     }
 
     // Validate email format
     if (!isValidEmail(email)) {
-      return res.status(400).json({ 
-        error: 'Email không đúng định dạng' 
+      return res.status(400).json({
+        error: 'Email không đúng định dạng'
       });
     }
 
     // Validate username length
     if (username.length < 3 || username.length > 50) {
-      return res.status(400).json({ 
-        error: 'Username phải từ 3-50 ký tự' 
+      return res.status(400).json({
+        error: 'Username phải từ 3-50 ký tự'
       });
     }
 
     // Validate password length
     if (password.length < 6) {
-      return res.status(400).json({ 
-        error: 'Mật khẩu phải có ít nhất 6 ký tự' 
+      return res.status(400).json({
+        error: 'Mật khẩu phải có ít nhất 6 ký tự'
       });
     }
 
     // Kiểm tra email đã tồn tại
     const existingEmail = await userRepository.findByEmail(email);
     if (existingEmail) {
-      return res.status(400).json({ 
-        error: 'Email đã được sử dụng' 
+      return res.status(400).json({
+        error: 'Email đã được sử dụng'
       });
     }
 
     // Kiểm tra username đã tồn tại
     const existingUsername = await userRepository.findByUsername(username);
     if (existingUsername) {
-      return res.status(400).json({ 
-        error: 'Username đã được sử dụng' 
+      return res.status(400).json({
+        error: 'Username đã được sử dụng'
       });
     }
 
@@ -98,24 +100,24 @@ router.post('/login', async (req, res) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ 
-        error: 'Vui lòng điền email và mật khẩu' 
+      return res.status(400).json({
+        error: 'Vui lòng điền email và mật khẩu'
       });
     }
 
     // Tìm user theo email
     const user = await userRepository.findByEmail(email);
     if (!user) {
-      return res.status(401).json({ 
-        error: 'Email hoặc mật khẩu không đúng' 
+      return res.status(401).json({
+        error: 'Email hoặc mật khẩu không đúng'
       });
     }
 
     // Kiểm tra password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
-      return res.status(401).json({ 
-        error: 'Email hoặc mật khẩu không đúng' 
+      return res.status(401).json({
+        error: 'Email hoặc mật khẩu không đúng'
       });
     }
 
@@ -142,25 +144,22 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me - Lấy thông tin user hiện tại (cần token)
-router.get('/me', async (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ error: 'Chưa đăng nhập' });
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await userRepository.findById(decoded.userId);
+    // authenticateToken đã verify JWT và gắn decoded vào req.user
+    const user = await userRepository.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({ error: 'User không tồn tại' });
     }
 
+    // Giữ nguyên format như cũ để không phá test
     res.json({ user });
   } catch (error) {
-    console.error('Get me error:', error);
-    res.status(401).json({ error: 'Token không hợp lệ' });
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Get me error:', error);
+    }
+    res.status(500).json({ error: 'Lỗi server' });
   }
 });
 

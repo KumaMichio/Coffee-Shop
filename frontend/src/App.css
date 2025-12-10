@@ -259,6 +259,14 @@ body {
 .map-wrapper {
   flex: 1;
   min-height: 320px;
+  /* Smooth transitions for map container */
+  transition: opacity 0.3s ease-in-out;
+  position: relative;
+}
+
+/* Smooth transitions for map canvas */
+.map-wrapper canvas {
+  transition: transform 0.3s ease-out;
 }
 
 /* Responsive: màn nhỏ thì xếp dọc */
@@ -285,6 +293,13 @@ body {
   background: #1976d2;
   border: 3px solid #e0f2fe;
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.3);
+  /* Smooth transitions for marker position */
+  transition: transform 0.3s ease-out;
+}
+
+/* Smooth transitions for map markers */
+.map-wrapper .goong-marker {
+  transition: transform 0.3s ease-out, opacity 0.2s ease-in-out;
 }
 
 /* Nút GPS */
@@ -322,4 +337,80 @@ body {
 }
 .favorite-btn:hover {
   transform: scale(1.1);
+}
+
+.directions-btn {
+  padding: 6px 12px;
+  border: 1px solid #3b82f6;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.directions-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Filter Bar */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.filter-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-clear-btn {
+  padding: 6px 12px;
+  border: 1px solid #dc2626;
+  background: #fff;
+  color: #dc2626;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background 0.2s;
+}
+
+.filter-clear-btn:hover {
+  background: #fee2e2;
 }

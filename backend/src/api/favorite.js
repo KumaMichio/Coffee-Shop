@@ -19,7 +19,9 @@ router.get('/', async (req, res) => {
       favorites
     });
   } catch (error) {
-    console.error('Get favorites error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Get favorites error:', error);
+    }
     res.status(500).json({ error: 'Lỗi server' });
   }
 });
@@ -28,12 +30,21 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { provider, provider_place_id, name, address, lat, lng, rating, user_rating_count } = req.body;
+    const {
+      provider,
+      provider_place_id,
+      name,
+      address,
+      lat,
+      lng,
+      rating,
+      user_rating_count
+    } = req.body;
 
     // Validate input
     if (!provider || !provider_place_id || !name || lat === undefined || lng === undefined) {
-      return res.status(400).json({ 
-        error: 'Thiếu thông tin quán cà phê' 
+      return res.status(400).json({
+        error: 'Thiếu thông tin quán cà phê'
       });
     }
 
@@ -55,9 +66,20 @@ router.post('/', async (req, res) => {
       favoriteId: result.favoriteId
     });
   } catch (error) {
-    console.error('Add favorite error:', error);
-    if (error.code === '23505') { // Unique violation
+    // Lỗi duplicate (unique constraint) là case đã được xử lý business => không cần in full stack trong test
+    if (error.code === '23505') {
+      if (process.env.NODE_ENV !== 'test') {
+        console.warn('Duplicate favorite cafe for user:', {
+          message: error.message,
+          detail: error.detail
+        });
+      }
       return res.status(400).json({ error: 'Quán đã có trong danh sách yêu thích' });
+    }
+
+    // Các lỗi khác mới log là lỗi server
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Add favorite error:', error);
     }
     res.status(500).json({ error: 'Lỗi server' });
   }
@@ -67,7 +89,7 @@ router.post('/', async (req, res) => {
 router.delete('/:cafeId', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const cafeId = parseInt(req.params.cafeId);
+    const cafeId = parseInt(req.params.cafeId, 10);
 
     if (isNaN(cafeId)) {
       return res.status(400).json({ error: 'ID quán không hợp lệ' });
@@ -83,7 +105,9 @@ router.delete('/:cafeId', async (req, res) => {
       message: 'Xóa khỏi yêu thích thành công'
     });
   } catch (error) {
-    console.error('Remove favorite error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Remove favorite error:', error);
+    }
     res.status(500).json({ error: 'Lỗi server' });
   }
 });
@@ -92,7 +116,7 @@ router.delete('/:cafeId', async (req, res) => {
 router.get('/check/:cafeId', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const cafeId = parseInt(req.params.cafeId);
+    const cafeId = parseInt(req.params.cafeId, 10);
 
     if (isNaN(cafeId)) {
       return res.status(400).json({ error: 'ID quán không hợp lệ' });
@@ -102,7 +126,9 @@ router.get('/check/:cafeId', async (req, res) => {
 
     res.json({ isFavorite });
   } catch (error) {
-    console.error('Check favorite error:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Check favorite error:', error);
+    }
     res.status(500).json({ error: 'Lỗi server' });
   }
 });
