@@ -63,3 +63,26 @@ CREATE TABLE favorites (
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_cafe_id ON favorites(cafe_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user_cafe ON favorites(user_id, cafe_id);
+
+-- ============================
+-- REVIEWS TABLE (Đánh giá)
+-- ============================
+-- Bảng lưu đánh giá của user cho các quán cà phê
+CREATE TABLE reviews (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cafe_id INTEGER NOT NULL REFERENCES cafes(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  is_public BOOLEAN DEFAULT TRUE,
+  is_child_friendly BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, cafe_id)  -- Mỗi user chỉ đánh giá 1 lần cho mỗi quán
+);
+
+-- Index cho query nhanh
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_cafe_id ON reviews(cafe_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_cafe ON reviews(user_id, cafe_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);

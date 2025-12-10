@@ -48,6 +48,55 @@ class UserRepository {
     );
     return result.rows.length > 0;
   }
+
+  // Cập nhật thông tin user
+  async update(id, updates) {
+    const { username, email } = updates;
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (username !== undefined) {
+      fields.push(`username = $${paramCount}`);
+      values.push(username);
+      paramCount++;
+    }
+
+    if (email !== undefined) {
+      fields.push(`email = $${paramCount}`);
+      values.push(email);
+      paramCount++;
+    }
+
+    if (fields.length === 0) {
+      return this.findById(id);
+    }
+
+    fields.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const result = await pool.query(
+      `UPDATE users 
+       SET ${fields.join(', ')} 
+       WHERE id = $${paramCount}
+       RETURNING id, username, email, created_at, updated_at`,
+      values
+    );
+
+    return result.rows[0];
+  }
+
+  // Cập nhật password
+  async updatePassword(id, passwordHash) {
+    const result = await pool.query(
+      `UPDATE users 
+       SET password_hash = $1, updated_at = NOW() 
+       WHERE id = $2
+       RETURNING id, username, email, created_at`,
+      [passwordHash, id]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = new UserRepository();

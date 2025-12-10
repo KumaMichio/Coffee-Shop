@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import goongjs from '@goongmaps/goong-js';
 import '@goongmaps/goong-js/dist/goong-js.css';
 
-function MapView({ center, cafes, currentLocation, onSelectCafe }) {
+function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -11,6 +11,7 @@ function MapView({ center, cafes, currentLocation, onSelectCafe }) {
   // Track previous center to detect changes
   const prevCenterRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const prevZoomToLocationRef = useRef(null);
 
   // Track if map is ready
   const mapReadyRef = useRef(false);
@@ -150,14 +151,63 @@ function MapView({ center, cafes, currentLocation, onSelectCafe }) {
     }
   };
 
+  // Zoom to location when zoomToLocation prop changes
+  useEffect(() => {
+    if (!mapRef.current || !zoomToLocation) {
+      prevZoomToLocationRef.current = null;
+      return;
+    }
+    
+    // Always zoom when zoomToLocation is set (don't skip if same location, allow re-zoom)
+    const zoomToLocationHandler = () => {
+      if (!mapRef.current) return;
+
+      if (!mapReadyRef.current) {
+        setTimeout(zoomToLocationHandler, 100);
+        return;
+      }
+
+      try {
+        // Zoom to location with appropriate zoom level (15 is good for street level)
+        if (typeof mapRef.current.flyTo === 'function') {
+          mapRef.current.flyTo({
+            center: [zoomToLocation.lng, zoomToLocation.lat],
+            zoom: 15,
+            duration: 1500,
+            essential: true
+          });
+          prevZoomToLocationRef.current = zoomToLocation;
+        } else if (typeof mapRef.current.easeTo === 'function') {
+          mapRef.current.easeTo({
+            center: [zoomToLocation.lng, zoomToLocation.lat],
+            zoom: 15,
+            duration: 1200
+          });
+          prevZoomToLocationRef.current = zoomToLocation;
+        } else {
+          mapRef.current.setCenter([zoomToLocation.lng, zoomToLocation.lat]);
+          mapRef.current.setZoom(15);
+          prevZoomToLocationRef.current = zoomToLocation;
+        }
+      } catch (err) {
+        console.error('Error zooming to location:', err);
+      }
+    };
+
+    zoomToLocationHandler();
+  }, [zoomToLocation]);
+
   // update center with smooth transition
   useEffect(() => {
     if (!mapRef.current || !center) return;
     
-    // Skip if center hasn't changed (with small tolerance for floating point)
-    if (prevCenterRef.current && 
-        Math.abs(prevCenterRef.current.lat - center.lat) < 0.0001 && 
-        Math.abs(prevCenterRef.current.lng - center.lng) < 0.0001) {
+    // Check if center has changed (including timestamp for force update)
+    const centerChanged = !prevCenterRef.current || 
+        Math.abs(prevCenterRef.current.lat - center.lat) > 0.0001 || 
+        Math.abs(prevCenterRef.current.lng - center.lng) > 0.0001 ||
+        (center._timestamp && prevCenterRef.current._timestamp !== center._timestamp);
+    
+    if (!centerChanged) {
       return;
     }
 
@@ -172,36 +222,41 @@ function MapView({ center, cafes, currentLocation, onSelectCafe }) {
       }
 
       try {
+        // Normal center update - always update center when it changes
+        // Don't change zoom here, zoom is handled by zoomToLocation effect
+        const currentZoom = mapRef.current.getZoom();
+        
         // Try native methods first
         if (typeof mapRef.current.flyTo === 'function') {
           mapRef.current.flyTo({
             center: [center.lng, center.lat],
             duration: 1200,
-            zoom: mapRef.current.getZoom(),
+            zoom: currentZoom,
             essential: true
           });
-          prevCenterRef.current = center;
+          prevCenterRef.current = { lat: center.lat, lng: center.lng };
           return;
         } 
         
         if (typeof mapRef.current.easeTo === 'function') {
           mapRef.current.easeTo({
             center: [center.lng, center.lat],
-            duration: 1000
+            duration: 1000,
+            zoom: currentZoom
           });
-          prevCenterRef.current = center;
+          prevCenterRef.current = { lat: center.lat, lng: center.lng };
           return;
         }
 
         // Use custom smooth transition
         smoothTransitionTo(center, 1000);
-        prevCenterRef.current = center;
+        prevCenterRef.current = { lat: center.lat, lng: center.lng };
       } catch (err) {
         console.error('Error updating center:', err);
         // Fallback to direct setCenter
         try {
           mapRef.current.setCenter([center.lng, center.lat]);
-          prevCenterRef.current = center;
+          prevCenterRef.current = { lat: center.lat, lng: center.lng };
         } catch (e) {
           console.error('Error setting center directly:', e);
         }
@@ -326,19 +381,57 @@ function MapView({ center, cafes, currentLocation, onSelectCafe }) {
         currentMarkerRef.current = null;
       }
 
-      if (!currentLocation) return;
+      if (!currentLocation) {
+        console.log('MapView: No current location to display');
+        return;
+      }
 
       try {
+        console.log('MapView: Adding current location marker at:', {
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
+          coordinates: [currentLocation.lng, currentLocation.lat]
+        });
+
         // tạo HTML element custom cho marker
         const el = document.createElement('div');
         el.className = 'current-location-marker';
+        
+        // Thêm animation khi marker xuất hiện
+        el.style.animation = 'pulse 2s infinite';
+
+        // Đảm bảo sử dụng đúng format [lng, lat] cho Goong Maps
+        const coordinates = [currentLocation.lng, currentLocation.lat];
+        console.log('MapView: Setting marker coordinates:', coordinates);
 
         currentMarkerRef.current = new goongjs.Marker({ element: el })
-          .setLngLat([currentLocation.lng, currentLocation.lat])
+          .setLngLat(coordinates)
           .setPopup(
-            new goongjs.Popup({ offset: 20 }).setHTML('<strong>Vị trí của tôi</strong>')
+            new goongjs.Popup({ offset: 20 }).setHTML(
+              `<strong>📍 Vị trí của tôi</strong><br/>
+              Lat: ${currentLocation.lat.toFixed(6)}<br/>
+              Lng: ${currentLocation.lng.toFixed(6)}`
+            )
           )
           .addTo(mapRef.current);
+
+        // Verify marker position
+        const markerPosition = currentMarkerRef.current.getLngLat();
+        console.log('MapView: Marker position verified:', {
+          lng: markerPosition.lng,
+          lat: markerPosition.lat
+        });
+          
+        // Tự động mở popup khi marker được thêm vào
+        if (currentMarkerRef.current.getPopup) {
+          setTimeout(() => {
+            try {
+              currentMarkerRef.current.togglePopup();
+            } catch (e) {
+              console.warn('Could not toggle popup:', e);
+            }
+          }, 500);
+        }
       } catch (err) {
         console.error('Error adding current location marker:', err);
       }
@@ -347,7 +440,7 @@ function MapView({ center, cafes, currentLocation, onSelectCafe }) {
     addCurrentLocationMarker();
   }, [currentLocation]);
 
-  return <div ref={mapContainerRef} className="map-wrapper" />;
+  return <div ref={mapContainerRef} className="map-wrapper-new" />;
 }
 
 export default MapView;

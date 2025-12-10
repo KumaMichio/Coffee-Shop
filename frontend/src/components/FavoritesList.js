@@ -3,19 +3,32 @@ import React, { useState, useEffect } from 'react';
 import { List, Card, Button, message, Empty, Spin, Rate } from 'antd';
 import { HeartFilled, EnvironmentOutlined } from '@ant-design/icons';
 import favoriteService from '../services/favoriteService';
-
-// Helper function để tạo Google Maps Directions URL
-const getGoogleMapsDirectionsUrl = (cafe) => {
-  const destination = `${cafe.lat},${cafe.lng}`;
-  return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-};
+import DirectionsModal from './DirectionsModal';
 
 const FavoritesList = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [directionsModalVisible, setDirectionsModalVisible] = useState(false);
+  const [selectedCafeForDirections, setSelectedCafeForDirections] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   useEffect(() => {
     loadFavorites();
+    // Lấy vị trí hiện tại nếu có
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCurrentLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          });
+        },
+        () => {
+          // Ignore error
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
   }, []);
 
   const loadFavorites = async () => {
@@ -40,6 +53,16 @@ const FavoritesList = () => {
     }
   };
 
+  const handleOpenDirections = (cafe) => {
+    setSelectedCafeForDirections(cafe);
+    setDirectionsModalVisible(true);
+  };
+
+  const handleCloseDirectionsModal = () => {
+    setDirectionsModalVisible(false);
+    setSelectedCafeForDirections(null);
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -58,6 +81,7 @@ const FavoritesList = () => {
   }
 
   return (
+    <>
     <List
       grid={{
         gutter: [16, 16],
@@ -89,10 +113,10 @@ const FavoritesList = () => {
               <Button
                 type="link"
                 icon={<EnvironmentOutlined />}
-                onClick={() => window.open(getGoogleMapsDirectionsUrl(cafe), '_blank')}
+                onClick={() => handleOpenDirections(cafe)}
                 key="directions"
               >
-                Chỉ đường
+                経路案内
               </Button>,
               <Button
                 type="text"
@@ -112,12 +136,17 @@ const FavoritesList = () => {
               <div style={{ marginBottom: 8, color: '#666' }}>
                 <EnvironmentOutlined /> {cafe.address || 'Chưa có địa chỉ'}
               </div>
-              {cafe.rating && (
+              {cafe.user_rating != null ? (
                 <div style={{ marginBottom: 8 }}>
-                  <Rate disabled defaultValue={cafe.rating} allowHalf style={{ fontSize: 14 }} />
+                  <Rate disabled defaultValue={cafe.user_rating} allowHalf style={{ fontSize: 14 }} />
                   <span style={{ marginLeft: 8, color: '#666' }}>
-                    {cafe.rating} ({cafe.user_rating_count || 0} đánh giá)
+                    {cafe.user_rating.toFixed(1)} ({cafe.review_count || 0} đánh giá)
                   </span>
+                </div>
+              ) : (
+                <div style={{ marginBottom: 8, color: '#999' }}>
+                  <Rate disabled defaultValue={0} style={{ fontSize: 14 }} />
+                  <span style={{ marginLeft: 8 }}>N/A</span>
                 </div>
               )}
             </div>
@@ -128,6 +157,13 @@ const FavoritesList = () => {
         </List.Item>
       )}
     />
+    <DirectionsModal
+      visible={directionsModalVisible}
+      onCancel={handleCloseDirectionsModal}
+      cafe={selectedCafeForDirections}
+      currentLocation={currentLocation}
+    />
+    </>
   );
 };
 

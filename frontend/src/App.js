@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Favorites from './pages/Favorites';
+import Review from './pages/Review';
+import Profile from './pages/Profile';
 import authService from './services/authService';
 import './App.css';
 
@@ -32,6 +34,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Favorites />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/review/:cafeId" 
+            element={
+              <ProtectedRoute>
+                <Review />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } 
           />
