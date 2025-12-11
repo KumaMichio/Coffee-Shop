@@ -1,7 +1,7 @@
 /* Profile Page Styles */
 .profile-page {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #f5e6d3; /* Màu nâu nhạt */
 }
 
 .profile-page-loading {
@@ -13,10 +13,10 @@
 
 /* Header */
 .profile-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: #faf8f5; /* Màu nâu nhạt cho cards/panels */
+  border-bottom: 1px solid #d4a574; /* Border màu nâu */
   padding: 12px 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(139, 111, 71, 0.1);
 }
 
 .profile-header-content {
@@ -102,7 +102,7 @@
 
 .profile-header-nav .nav-link:hover,
 .profile-header-nav .nav-link.active {
-  background: #f3f4f6;
+  background: #f5e6d3; /* Màu nâu nhạt khi hover */
   color: #1f2937;
 }
 
@@ -156,11 +156,11 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: #f5e6d3; /* Màu nâu nhạt */
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #e5e7eb;
+  border: 3px solid #d4a574; /* Border màu nâu */
   transition: border-color 0.3s;
 }
 
@@ -271,15 +271,15 @@
   display: flex;
   gap: 12px;
   padding: 12px;
-  background: #f9fafb;
+  background: #f5e6d3; /* Màu nâu nhạt */
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d4a574; /* Border màu nâu */
 }
 
 .review-thumbnail {
   width: 60px;
   height: 60px;
-  background: #f3f4f6;
+  background: #f5e6d3; /* Màu nâu nhạt */
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -367,8 +367,8 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+  background: #f5e6d3; /* Màu nâu nhạt khi hover */
+  border-color: #d4a574;
 }
 
 .pagination-btn:disabled {
@@ -389,8 +389,8 @@
 }
 
 .pagination-number:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+  background: #f5e6d3; /* Màu nâu nhạt khi hover */
+  border-color: #d4a574;
 }
 
 .pagination-number.active {

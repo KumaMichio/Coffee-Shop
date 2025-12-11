@@ -112,9 +112,21 @@ async function fetchWithRetry(url, maxRetries = 2, delayMs = 1000) {
 async function searchNearbyFromGoong(lat, lng, radiusMeters, keyword) {
   if (!goong.restApiKey) return [];
 
-  // Giảm số keywords mặc định để tránh rate limit
-  // Chỉ dùng 2-3 keywords quan trọng nhất
-  const defaultKeywords = keyword ? [] : ['cafe', 'cà phê'];
+  // Mở rộng keywords để bao gồm nhiều loại quán cà phê phổ biến
+  // Bao gồm: cafe, cà phê, highland, phúc long, coffee, starbucks, trung nguyên, the coffee house, etc.
+  const defaultKeywords = keyword ? [] : [
+    'cafe',
+    'cà phê',
+    'coffee',
+    'highland',
+    'phúc long',
+    'starbucks',
+    'trung nguyên',
+    'the coffee house',
+    'highlands coffee',
+    'phuclong',
+    'cong caphe'
+  ];
   const keywords = keyword
     ? Array.isArray(keyword)
       ? keyword
@@ -234,50 +246,104 @@ async function searchNearbyFromGoogle(lat, lng, radiusMeters, keyword) {
   try {
     const placeMap = new Map(); // place_id -> normalized place
 
-    // Chỉ gọi 1 request với type='cafe' thay vì nhiều keywords
-    // Google Places API có thể trả về nhiều kết quả với type='cafe'
-    const baseUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-    baseUrl.searchParams.set('location', `${lat},${lng}`);
-    baseUrl.searchParams.set('radius', radiusMeters || 2000);
-    baseUrl.searchParams.set('type', 'cafe');
-    baseUrl.searchParams.set('key', google.placesApiKey);
-
-    // Nếu có keyword, thêm vào query
+    // Nếu có keyword từ user, chỉ search với keyword đó
     if (keyword) {
+      const baseUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+      baseUrl.searchParams.set('location', `${lat},${lng}`);
+      baseUrl.searchParams.set('radius', radiusMeters || 2000);
+      baseUrl.searchParams.set('type', 'cafe');
       baseUrl.searchParams.set('keyword', keyword);
-    }
+      baseUrl.searchParams.set('key', google.placesApiKey);
 
-    try {
-      const res = await fetchWithRetry(baseUrl.toString());
-      if (res.ok) {
-        const data = await res.json();
-        const results = data.results || [];
-        
-        // Giới hạn số lượng results để tránh quá nhiều data
-        const limitedResults = results.slice(0, 20);
-        
-        for (const place of limitedResults) {
-          const pid = place.place_id || `${place.geometry?.location?.lat}_${place.geometry?.location?.lng}_${place.name}`;
-          if (!pid || placeMap.has(pid)) continue;
-          placeMap.set(pid, normalizePlace({
-            provider: 'google',
-            place: {
-              ...place,
-              // Đảm bảo photos được truyền vào
-              photos: place.photos || null,
-              photo_reference: place.photos?.[0]?.photo_reference || null
-            },
-            lat: place.geometry.location.lat,
-            lng: place.geometry.location.lng,
-            centerLat: lat,
-            centerLng: lng
-          }));
+      try {
+        const res = await fetchWithRetry(baseUrl.toString());
+        if (res.ok) {
+          const data = await res.json();
+          const results = data.results || [];
+          
+          const limitedResults = results.slice(0, 20);
+          
+          for (const place of limitedResults) {
+            const pid = place.place_id || `${place.geometry?.location?.lat}_${place.geometry?.location?.lng}_${place.name}`;
+            if (!pid || placeMap.has(pid)) continue;
+            placeMap.set(pid, normalizePlace({
+              provider: 'google',
+              place: {
+                ...place,
+                photos: place.photos || null,
+                photo_reference: place.photos?.[0]?.photo_reference || null
+              },
+              lat: place.geometry.location.lat,
+              lng: place.geometry.location.lng,
+              centerLat: lat,
+              centerLng: lng
+            }));
+          }
         }
-      } else if (res.status === 429) {
-        console.warn('Google Places API rate limited');
+      } catch (err) {
+        console.error('Google Places API error:', err.message);
       }
-    } catch (err) {
-      console.error('Google Places API error:', err.message);
+    } else {
+      // Nếu không có keyword, search với nhiều keywords phổ biến để lấy tất cả quán
+      const defaultKeywords = [
+        'cafe',
+        'coffee',
+        'highland',
+        'phúc long',
+        'starbucks',
+        'trung nguyên',
+        'the coffee house'
+      ];
+
+      // Sequential requests để tránh rate limit
+      for (let i = 0; i < defaultKeywords.length; i++) {
+        const kw = defaultKeywords[i];
+        
+        // Delay giữa các requests
+        if (i > 0) {
+          await delay(300);
+        }
+
+        try {
+          const baseUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+          baseUrl.searchParams.set('location', `${lat},${lng}`);
+          baseUrl.searchParams.set('radius', radiusMeters || 2000);
+          baseUrl.searchParams.set('type', 'cafe');
+          baseUrl.searchParams.set('keyword', kw);
+          baseUrl.searchParams.set('key', google.placesApiKey);
+
+          const res = await fetchWithRetry(baseUrl.toString());
+          if (res.ok) {
+            const data = await res.json();
+            const results = data.results || [];
+            
+            const limitedResults = results.slice(0, 10); // Giảm số lượng mỗi keyword
+            
+            for (const place of limitedResults) {
+              const pid = place.place_id || `${place.geometry?.location?.lat}_${place.geometry?.location?.lng}_${place.name}`;
+              if (!pid || placeMap.has(pid)) continue;
+              placeMap.set(pid, normalizePlace({
+                provider: 'google',
+                place: {
+                  ...place,
+                  photos: place.photos || null,
+                  photo_reference: place.photos?.[0]?.photo_reference || null
+                },
+                lat: place.geometry.location.lat,
+                lng: place.geometry.location.lng,
+                centerLat: lat,
+                centerLng: lng
+              }));
+            }
+          } else if (res.status === 429) {
+            console.warn('Google Places API rate limited for keyword:', kw);
+            break; // Dừng nếu bị rate limit
+          }
+        } catch (err) {
+          console.error('Google Places API error for keyword', kw, ':', err.message);
+          // Continue với keyword tiếp theo
+        }
+      }
     }
 
     return Array.from(placeMap.values());

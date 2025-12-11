@@ -7,34 +7,23 @@
 
 .auth-background-section {
   flex: 1;
-  background-image: url('E:/GitHub_Class_project/Coffee-Shop/frontend/public/76441f46203d319b2f7d1bb4c6bcfab3.jpg');
+  /* background-image is set inline in component */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
 }
 
-.auth-background-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
-  z-index: 1;
-}
+/* Bỏ overlay gradient màu xanh */
 
 .auth-background-content {
   position: relative;
-  z-index: 2;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 40px;
-  color: white;
 }
 
 .auth-background-title {
@@ -57,7 +46,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: #ffffff;
+  background: #f5e6d3; /* Màu nâu nhạt */
 }
 
 .auth-form-container {
@@ -69,6 +58,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   border: none;
+  background: #faf8f5; /* Màu nâu nhạt cho card */
 }
 
 .auth-form-title {

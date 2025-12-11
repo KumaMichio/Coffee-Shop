@@ -34,7 +34,7 @@ function Home() {
   const [allCafes, setAllCafes] = useState([]); // Lưu tất cả quán trước khi filter
   const [shouldZoomToLocation, setShouldZoomToLocation] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(3);
   const [showCafesOnMap, setShowCafesOnMap] = useState(true);
   const [directionsModalVisible, setDirectionsModalVisible] = useState(false);
   const [selectedCafeForDirections, setSelectedCafeForDirections] = useState(null);
@@ -193,6 +193,7 @@ function Home() {
         // Apply filters with current filters state
         const filtered = applyFilters(list, filters);
         setCafes(filtered);
+        setCurrentPage(1); // Reset to page 1 when loading new cafes
         console.log('After filter:', filtered.length, 'cafes');
         setMode('nearby');
         setSort('distance');
@@ -244,6 +245,7 @@ function Home() {
       setAllCafes(list);
       const filtered = applyFilters(list, filters);
       setCafes(filtered);
+      setCurrentPage(1); // Reset to page 1 when loading new cafes
       
       console.log('After filter:', filtered.length, 'cafes');
       
@@ -390,6 +392,7 @@ function Home() {
       setAllCafes(list);
       const filtered = applyFilters(list, filters);
       setCafes(filtered);
+      setCurrentPage(1); // Reset to page 1 when loading new cafes
       
       console.log('After filter:', filtered.length, 'cafes');
       if (filtered.length === 0 && list.length > 0) {
@@ -435,6 +438,8 @@ function Home() {
       const filtered = applyFilters(allCafes, newFilters);
       console.log('Cafes after filter:', filtered.length, filtered.map(c => ({ name: c.name, distance: c.distance })));
       setCafes(filtered);
+      // Reset to page 1 when filter changes
+      setCurrentPage(1);
       // Update center to first filtered cafe if available
       if (filtered.length > 0 && currentLocation) {
         // Keep current center, don't change it when filtering
@@ -442,6 +447,7 @@ function Home() {
     } else {
       console.warn('No cafes to filter! allCafes is empty');
       setCafes([]);
+      setCurrentPage(1);
     }
   };
 
@@ -613,13 +619,13 @@ function Home() {
                             <span className="cafe-rating-number">N/A</span>
                           </>
                         )}
+                        <span className="cafe-distance-text">
+                          {cafe.distance !== null && cafe.distance !== undefined 
+                            ? `${cafe.distance.toFixed(1)} km` 
+                            : '距離不明'}
+                        </span>
                       </div>
                       <p className="cafe-address-text">{cafe.address || '新昕総 倦涉万'}</p>
-                      <p className="cafe-distance-text">
-                        {cafe.distance !== null && cafe.distance !== undefined 
-                          ? `${cafe.distance.toFixed(1)} km` 
-                          : '距離不明'}
-                      </p>
                       <div className="cafe-action-buttons">
                         <button
                           type="button"
@@ -656,43 +662,55 @@ function Home() {
                 <div className="cafe-empty">Không có quán nào phù hợp.</div>
               )}
             </div>
-            {totalPages > 1 && (
-              <div className="pagination">
-                <button
-                  className="pagination-btn"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  前っ
-                </button>
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  return (
+            {totalPages > 0 && (
+              <div className="cafe-pagination">
+                <div className="pagination-info">
+                  <span>
+                    {cafes.length > 0 
+                      ? `ページ ${currentPage} / ${totalPages} (全 ${cafes.length} 件)`
+                      : 'カフェが見つかりません'
+                    }
+                  </span>
+                </div>
+                {totalPages > 1 && (
+                  <div className="pagination">
                     <button
-                      key={pageNum}
-                      className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
-                      onClick={() => handlePageChange(pageNum)}
+                      className="pagination-btn"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
                     >
-                      {pageNum}
+                      前へ
                     </button>
-                  );
-                })}
-                <button
-                  className="pagination-btn"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  次へ
-                </button>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={pageNum}
+                          className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      className="pagination-btn"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                    >
+                      次へ
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

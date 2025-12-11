@@ -11,7 +11,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
     setLoading(true);
     try {
       await authService.login(values.email, values.password);
-      message.success('Đăng nhập thành công!');
+      message.success('ログインに成功しました！');
       if (onSuccess) onSuccess();
     } catch (error) {
       message.error(error.message);
@@ -28,28 +28,28 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
       layout="vertical"
     >
       <Form.Item
-        label="Email"
+        label="メールアドレス"
         name="email"
         rules={[
-          { required: true, message: 'Vui lòng nhập email!' },
-          { type: 'email', message: 'Email không đúng định dạng!' },
+          { required: true, message: 'メールアドレスを入力してください！' },
+          { type: 'email', message: 'メールアドレスの形式が正しくありません！' },
         ]}
       >
         <Input 
           prefix={<UserOutlined />} 
-          placeholder="Email" 
+          placeholder="メールアドレス" 
           size="large"
         />
       </Form.Item>
 
       <Form.Item
-        label="Mật khẩu"
+        label="パスワード"
         name="password"
-        rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+        rules={[{ required: true, message: 'パスワードを入力してください！' }]}
       >
         <Input.Password
           prefix={<LockOutlined />}
-          placeholder="Mật khẩu"
+          placeholder="パスワード"
           size="large"
         />
       </Form.Item>
@@ -62,14 +62,14 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
           block 
           size="large"
         >
-          Đăng nhập
+          ログイン
         </Button>
       </Form.Item>
 
       <div style={{ textAlign: 'center' }}>
-        Chưa có tài khoản?{' '}
+        アカウントをお持ちでない方は{' '}
         <Button type="link" onClick={onSwitchToRegister}>
-          Đăng ký ngay
+          新規登録
         </Button>
       </div>
     </Form>

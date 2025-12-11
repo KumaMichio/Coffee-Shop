@@ -21,7 +21,7 @@ const Auth = () => {
       label: (
         <span>
           <LoginOutlined />
-          Đăng nhập
+          ログイン
         </span>
       ),
       children: (
@@ -36,7 +36,7 @@ const Auth = () => {
       label: (
         <span>
           <UserAddOutlined />
-          Đăng ký
+          新規登録
         </span>
       ),
       children: (
@@ -51,12 +51,12 @@ const Auth = () => {
   return (
     <div className="auth-page">
       {/* Left Section - Background Image */}
-      <div className="auth-background-section">
+      <div 
+        className="auth-background-section"
+        style={{ backgroundImage: `url(${process.env.PUBLIC_URL || ''}/wp7575195-anime-cafe-wallpapers.jpg)` }}
+      >
         <div className="auth-background-content">
-          <h1 className="auth-background-title">☕ Coffee Shop Finder</h1>
-          <p className="auth-background-subtitle">
-            Khám phá những quán cà phê tuyệt vời xung quanh bạn
-          </p>
+          {/* Background image only, no text */}
         </div>
       </div>
 
