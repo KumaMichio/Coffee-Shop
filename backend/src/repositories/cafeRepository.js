@@ -17,6 +17,21 @@ function distanceInMeters(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
+// Helper function để tạo photo URL từ photo_reference
+function getPhotoUrl(provider, photoReference, apiKey) {
+  if (!photoReference || !apiKey) return null;
+  
+  if (provider === 'google') {
+    // Google Places Photo API
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${apiKey}`;
+  } else if (provider === 'goong') {
+    // Goong API - format có thể khác, cần kiểm tra
+    // Tạm thời dùng format tương tự Google
+    return `https://rsapi.goong.io/Place/Photo?photo_reference=${photoReference}&api_key=${apiKey}`;
+  }
+  return null;
+}
+
 // Normalize 1 place thành cafe chung
 function normalizePlace({
   provider,
@@ -37,6 +52,22 @@ function normalizePlace({
   // Chuyển từ mét sang km
   const distance = distanceMeters !== null ? distanceMeters / 1000 : null;
 
+  // Lấy photo reference từ place object
+  let photoUrl = null;
+  if (provider === 'google' && place.photos && place.photos.length > 0) {
+    // Google: lấy photo_reference từ photos array
+    const photoRef = place.photos[0].photo_reference;
+    photoUrl = getPhotoUrl('google', photoRef, google.placesApiKey);
+  } else if (provider === 'goong' && place.photos && place.photos.length > 0) {
+    // Goong: cần kiểm tra format response
+    const photoRef = place.photos[0].photo_reference || place.photos[0].reference;
+    photoUrl = getPhotoUrl('goong', photoRef, goong.restApiKey);
+  } else if (place.photo_reference) {
+    // Fallback: nếu có photo_reference trực tiếp
+    photoUrl = getPhotoUrl(provider, place.photo_reference, 
+      provider === 'google' ? google.placesApiKey : goong.restApiKey);
+  }
+
   return {
     provider,
     provider_place_id: place.id || place.place_id,
@@ -46,7 +77,8 @@ function normalizePlace({
     lng: locationLng,
     rating: place.rating || null,
     user_rating_count: place.user_ratings_total || place.userRatingCount || null,
-    distance
+    distance,
+    photo_url: photoUrl
   };
 }
 
@@ -164,7 +196,9 @@ async function searchNearbyFromGoong(lat, lng, radiusMeters, keyword) {
                   name: result.name || p.structured_formatting?.main_text || p.description,
                   address: result.formatted_address || p.description,
                   rating: result.rating || null,
-                  user_ratings_total: result.user_ratings_total || null
+                  user_ratings_total: result.user_ratings_total || null,
+                  photos: result.photos || null,
+                  photo_reference: result.photos?.[0]?.photo_reference || result.photos?.[0]?.reference || null
                 },
                 lat: placeLat,
                 lng: placeLng,
@@ -227,7 +261,12 @@ async function searchNearbyFromGoogle(lat, lng, radiusMeters, keyword) {
           if (!pid || placeMap.has(pid)) continue;
           placeMap.set(pid, normalizePlace({
             provider: 'google',
-            place,
+            place: {
+              ...place,
+              // Đảm bảo photos được truyền vào
+              photos: place.photos || null,
+              photo_reference: place.photos?.[0]?.photo_reference || null
+            },
             lat: place.geometry.location.lat,
             lng: place.geometry.location.lng,
             centerLat: lat,

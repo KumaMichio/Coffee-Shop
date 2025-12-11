@@ -74,9 +74,44 @@ export const changePassword = async (currentPassword, newPassword) => {
   return response.json();
 };
 
+// Upload avatar
+export const uploadAvatar = async (avatarUrl) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(`${API_URL}/api/profile/avatar`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ avatar_url: avatarUrl })
+  });
+
+  if (!response.ok) {
+    // Xử lý lỗi 413 (Payload Too Large)
+    if (response.status === 413) {
+      throw new Error('Image is too big');
+    }
+    
+    // Thử parse JSON error, nếu không được thì dùng message mặc định
+    try {
+      const error = await response.json();
+      throw new Error(error.error || 'Không thể upload avatar');
+    } catch (parseError) {
+      throw new Error('Không thể upload avatar');
+    }
+  }
+
+  return response.json();
+};
+
 export default {
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  uploadAvatar
 };
 

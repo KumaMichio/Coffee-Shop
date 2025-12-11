@@ -23,7 +23,7 @@ class UserRepository {
   // Tìm user theo ID
   async findById(id) {
     const result = await pool.query(
-      'SELECT id, username, email, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, avatar_url, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];
@@ -51,7 +51,7 @@ class UserRepository {
 
   // Cập nhật thông tin user
   async update(id, updates) {
-    const { username, email } = updates;
+    const { username, email, avatar_url } = updates;
     const fields = [];
     const values = [];
     let paramCount = 1;
@@ -68,6 +68,12 @@ class UserRepository {
       paramCount++;
     }
 
+    if (avatar_url !== undefined) {
+      fields.push(`avatar_url = $${paramCount}`);
+      values.push(avatar_url);
+      paramCount++;
+    }
+
     if (fields.length === 0) {
       return this.findById(id);
     }
@@ -79,7 +85,7 @@ class UserRepository {
       `UPDATE users 
        SET ${fields.join(', ')} 
        WHERE id = $${paramCount}
-       RETURNING id, username, email, created_at, updated_at`,
+       RETURNING id, username, email, avatar_url, created_at, updated_at`,
       values
     );
 

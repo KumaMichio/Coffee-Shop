@@ -108,14 +108,42 @@ router.post('/', async (req, res) => {
 router.get('/cafe/:cafeId', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const cafeId = parseInt(req.params.cafeId);
+    let actualCafeId = parseInt(req.params.cafeId);
 
-    if (isNaN(cafeId)) {
-      return res.status(400).json({ error: 'ID quán không hợp lệ' });
+    // Nếu cafeId không phải là số, có thể là provider_provider_place_id format
+    if (isNaN(actualCafeId)) {
+      const db = require('../db');
+      const cafeIdParam = req.params.cafeId;
+      
+      // Parse format: provider_provider_place_id (ví dụ: "goong_skWIv1FNobZ1xCYtsGKc2mWsXay...")
+      const firstUnderscoreIndex = cafeIdParam.indexOf('_');
+      if (firstUnderscoreIndex === -1) {
+        return res.status(400).json({ error: 'ID quán không hợp lệ' });
+      }
+
+      const provider = cafeIdParam.substring(0, firstUnderscoreIndex);
+      const providerPlaceId = cafeIdParam.substring(firstUnderscoreIndex + 1);
+
+      // Tìm cafe trong DB theo provider và provider_place_id
+      const cafeResult = await db.query(
+        `SELECT id FROM cafes WHERE provider = $1 AND provider_place_id = $2`,
+        [provider, providerPlaceId]
+      );
+
+      if (cafeResult.rows.length === 0) {
+        // Cafe chưa có trong DB, trả về reviews rỗng
+        return res.json({
+          reviews: [],
+          average_rating: null,
+          review_count: 0
+        });
+      }
+
+      actualCafeId = cafeResult.rows[0].id;
     }
 
-    const reviews = await reviewRepository.getReviewsByCafe(cafeId, userId);
-    const avgRating = await reviewRepository.getAverageRating(cafeId);
+    const reviews = await reviewRepository.getReviewsByCafe(actualCafeId, userId);
+    const avgRating = await reviewRepository.getAverageRating(actualCafeId);
 
     res.json({
       reviews,
@@ -134,13 +162,37 @@ router.get('/cafe/:cafeId', async (req, res) => {
 router.get('/my/:cafeId', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const cafeId = parseInt(req.params.cafeId);
+    let actualCafeId = parseInt(req.params.cafeId);
 
-    if (isNaN(cafeId)) {
-      return res.status(400).json({ error: 'ID quán không hợp lệ' });
+    // Nếu cafeId không phải là số, có thể là provider_provider_place_id format
+    if (isNaN(actualCafeId)) {
+      const db = require('../db');
+      const cafeIdParam = req.params.cafeId;
+      
+      // Parse format: provider_provider_place_id (ví dụ: "goong_skWIv1FNobZ1xCYtsGKc2mWsXay...")
+      const firstUnderscoreIndex = cafeIdParam.indexOf('_');
+      if (firstUnderscoreIndex === -1) {
+        return res.status(400).json({ error: 'ID quán không hợp lệ' });
+      }
+
+      const provider = cafeIdParam.substring(0, firstUnderscoreIndex);
+      const providerPlaceId = cafeIdParam.substring(firstUnderscoreIndex + 1);
+
+      // Tìm cafe trong DB theo provider và provider_place_id
+      const cafeResult = await db.query(
+        `SELECT id FROM cafes WHERE provider = $1 AND provider_place_id = $2`,
+        [provider, providerPlaceId]
+      );
+
+      if (cafeResult.rows.length === 0) {
+        // Cafe chưa có trong DB, chưa có review nào
+        return res.json({ review: null });
+      }
+
+      actualCafeId = cafeResult.rows[0].id;
     }
 
-    const review = await reviewRepository.getReviewByUserAndCafe(userId, cafeId);
+    const review = await reviewRepository.getReviewByUserAndCafe(userId, actualCafeId);
 
     res.json({ review });
   } catch (error) {

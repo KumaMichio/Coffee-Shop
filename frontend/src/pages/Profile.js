@@ -1,19 +1,18 @@
 // frontend/src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Input, Button, Card, Spin, message, Tabs } from 'antd';
+import { Input, Button, Card, Spin, message, Tabs, Upload, Avatar } from 'antd';
 import { 
   HomeOutlined, 
   HeartOutlined, 
   UserOutlined, 
   SettingOutlined,
   EditOutlined,
-  SearchOutlined
+  SearchOutlined,
+  CameraOutlined
 } from '@ant-design/icons';
 import profileService from '../services/profileService';
 import './Profile.css';
-
-const { TabPane } = Tabs;
 
 function Profile() {
   const navigate = useNavigate();
@@ -32,6 +31,8 @@ function Profile() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -46,6 +47,7 @@ function Profile() {
       setTotalReviews(data.total_reviews || 0);
       setUsername(data.user.username);
       setEmail(data.user.email);
+      setAvatarUrl(data.user.avatar_url);
     } catch (err) {
       console.error('Load profile error:', err);
       message.error(err.message || 'Không thể tải thông tin profile');
@@ -85,6 +87,50 @@ function Profile() {
     } catch (err) {
       message.error(err.message || 'Không thể đổi mật khẩu');
     }
+  };
+
+  const handleAvatarChange = async (info) => {
+    const file = info.file;
+    
+    // Validate file type
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Chỉ có thể upload file ảnh');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Image is too big');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        setUploading(true);
+        const base64 = e.target.result;
+        const result = await profileService.uploadAvatar(base64);
+        setAvatarUrl(result.user.avatar_url);
+        message.success('Cập nhật avatar thành công');
+      } catch (err) {
+        // Xử lý lỗi 413 (Payload Too Large)
+        if (err.message && err.message.includes('413')) {
+          message.error('Image is too big');
+        } else {
+          message.error(err.message || 'Không thể upload avatar');
+        }
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.onerror = () => {
+      message.error('Lỗi khi đọc file');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const formatDate = (dateString) => {
@@ -149,9 +195,37 @@ function Profile() {
             <h2 className="profile-title">プロモール</h2>
             
             <div className="profile-avatar-section">
-              <div className="profile-avatar">
-                <UserOutlined style={{ fontSize: 48, color: '#9ca3af' }} />
-              </div>
+              <Upload
+                name="avatar"
+                showUploadList={false}
+                beforeUpload={() => false} // Prevent auto upload
+                onChange={handleAvatarChange}
+                accept="image/*"
+                disabled={uploading || !editing}
+              >
+                <div className="profile-avatar-wrapper">
+                  {avatarUrl ? (
+                    <Avatar
+                      src={avatarUrl}
+                      size={120}
+                      className="profile-avatar-image"
+                      icon={<UserOutlined />}
+                    />
+                  ) : (
+                    <div className="profile-avatar">
+                      <UserOutlined style={{ fontSize: 48, color: '#9ca3af' }} />
+                    </div>
+                  )}
+                  {editing && (
+                    <div className="profile-avatar-overlay">
+                      <CameraOutlined style={{ fontSize: 24, color: '#fff' }} />
+                    </div>
+                  )}
+                </div>
+              </Upload>
+              {editing && (
+                <p className="profile-avatar-hint">クリックしてアバターを変更 (最大5MB)</p>
+              )}
             </div>
 
             <div className="profile-form">
@@ -264,70 +338,87 @@ function Profile() {
           <Card className="contribution-card">
             <h2 className="contribution-title">奇谱质层</h2>
             
-            <Tabs activeKey={activeTab} onChange={setActiveTab}>
-              <TabPane tab="レビビー" key="reviews">
-                <div className="reviews-list">
-                  {reviews.length > 0 ? (
-                    reviews.map((review) => (
-                      <div key={review.id} className="review-item">
-                        <div className="review-thumbnail">
-                          <span className="review-thumbnail-icon">☕</span>
-                        </div>
-                        <div className="review-content">
-                          <h3 className="review-cafe-name">{review.cafe_name || 'カフェ名A'}</h3>
-                          <div className="review-rating">
-                            {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                          </div>
-                          {review.comment && (
-                            <p className="review-text">{review.comment}</p>
-                          )}
-                          <div className="review-date">
-                            {formatDate(review.created_at)}
-                          </div>
-                        </div>
+            <Tabs 
+              activeKey={activeTab} 
+              onChange={setActiveTab}
+              items={[
+                {
+                  key: 'reviews',
+                  label: `レビュー (${totalReviews})`,
+                  children: (
+                    <>
+                      <div className="reviews-list">
+                        {reviews.length > 0 ? (
+                          reviews.map((review) => (
+                            <div key={review.id} className="review-item">
+                              <div className="review-thumbnail">
+                                <span className="review-thumbnail-icon">☕</span>
+                              </div>
+                              <div className="review-content">
+                                <h3 className="review-cafe-name">{review.cafe_name || 'カフェ名'}</h3>
+                                <div className="review-rating">
+                                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                                </div>
+                                {review.comment && (
+                                  <p className="review-text">{review.comment}</p>
+                                )}
+                                {review.cafe_address && (
+                                  <p className="review-address">📍 {review.cafe_address}</p>
+                                )}
+                                <div className="review-date">
+                                  {formatDate(review.created_at)}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-reviews">レビューがありません</div>
+                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="empty-reviews">レビューがありません</div>
-                  )}
-                </div>
 
-                {totalReviews > 10 && (
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      前っ
-                    </button>
-                    {Array.from({ length: Math.ceil(totalReviews / 10) }, (_, i) => i + 1)
-                      .slice(0, 3)
-                      .map((page) => (
-                        <button
-                          key={page}
-                          className={`pagination-number ${currentPage === page ? 'active' : ''}`}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage >= Math.ceil(totalReviews / 10)}
-                    >
-                      次へ
-                    </button>
-                  </div>
-                )}
-              </TabPane>
-              <TabPane tab="手真" key="photos">
-                <div className="photos-list">
-                  <div className="empty-photos">写真がありません</div>
-                </div>
-              </TabPane>
-            </Tabs>
+                      {totalReviews > 10 && (
+                        <div className="pagination">
+                          <button
+                            className="pagination-btn"
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            前っ
+                          </button>
+                          {Array.from({ length: Math.ceil(totalReviews / 10) }, (_, i) => i + 1)
+                            .slice(0, 3)
+                            .map((page) => (
+                              <button
+                                key={page}
+                                className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                                onClick={() => setCurrentPage(page)}
+                              >
+                                {page}
+                              </button>
+                            ))}
+                          <button
+                            className="pagination-btn"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage >= Math.ceil(totalReviews / 10)}
+                          >
+                            次へ
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )
+                },
+                {
+                  key: 'photos',
+                  label: '手真',
+                  children: (
+                    <div className="photos-list">
+                      <div className="empty-photos">写真がありません</div>
+                    </div>
+                  )
+                }
+              ]}
+            />
           </Card>
         </div>
       </div>

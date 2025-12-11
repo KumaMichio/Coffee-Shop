@@ -5,6 +5,7 @@ import { LoginOutlined, UserAddOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
+import './Auth.css';
 
 const Auth = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -48,30 +49,34 @@ const Auth = () => {
   ];
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
-      <Card 
-        style={{ 
-          width: 450, 
-          boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-          borderRadius: '8px'
-        }}
-      >
-        <h1 style={{ textAlign: 'center', marginBottom: 24 }}>
-          ☕ Coffee Shop Finder
-        </h1>
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
-          items={items}
-          centered
-        />
-      </Card>
+    <div className="auth-page">
+      {/* Left Section - Background Image */}
+      <div className="auth-background-section">
+        <div className="auth-background-content">
+          <h1 className="auth-background-title">☕ Coffee Shop Finder</h1>
+          <p className="auth-background-subtitle">
+            Khám phá những quán cà phê tuyệt vời xung quanh bạn
+          </p>
+        </div>
+      </div>
+
+      {/* Right Section - Auth Form */}
+      <div className="auth-form-section">
+        <div className="auth-form-container">
+          <Card className="auth-form-card">
+            <h1 className="auth-form-title">
+              <span className="coffee-icon">☕</span>
+              Coffee Shop Finder
+            </h1>
+            <Tabs 
+              activeKey={activeTab} 
+              onChange={setActiveTab} 
+              items={items}
+              centered
+            />
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

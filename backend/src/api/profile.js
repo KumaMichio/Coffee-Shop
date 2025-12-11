@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        avatar_url: user.avatar_url || null,
         created_at: user.created_at
       },
       reviews: reviewsData.reviews,
@@ -52,7 +53,7 @@ router.get('/', async (req, res) => {
 router.put('/', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { username, email } = req.body;
+    const { username, email, avatar_url } = req.body;
 
     // Validate
     if (username && (username.length < 3 || username.length > 50)) {
@@ -68,6 +69,14 @@ router.put('/', async (req, res) => {
           error: 'Email không đúng định dạng'
         });
       }
+    }
+
+    // Validate avatar_url nếu có (chỉ validate URL, không validate base64 ở đây)
+    const isUrl = avatar_url && (avatar_url.startsWith('http://') || avatar_url.startsWith('https://'));
+    if (isUrl && avatar_url.length > 2000) {
+      return res.status(400).json({
+        error: 'Avatar URL quá dài'
+      });
     }
 
     // Kiểm tra username/email đã tồn tại (trừ user hiện tại)
@@ -90,7 +99,7 @@ router.put('/', async (req, res) => {
     }
 
     // Cập nhật
-    const updatedUser = await userRepository.update(userId, { username, email });
+    const updatedUser = await userRepository.update(userId, { username, email, avatar_url });
 
     res.json({
       message: 'Cập nhật profile thành công',
@@ -99,6 +108,68 @@ router.put('/', async (req, res) => {
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {
       console.error('Update profile error:', error);
+    }
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// POST /api/profile/avatar - Upload avatar (nhận base64 hoặc URL)
+router.post('/avatar', async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { avatar_url } = req.body;
+
+    if (!avatar_url) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Upload avatar: missing avatar_url in request body');
+      }
+      return res.status(400).json({
+        error: 'avatar_url là bắt buộc'
+      });
+    }
+
+    // Validate URL format hoặc base64
+    const isBase64 = avatar_url.startsWith('data:image');
+    const isUrl = avatar_url.startsWith('http://') || avatar_url.startsWith('https://');
+
+    if (!isBase64 && !isUrl) {
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Upload avatar: invalid format, avatar_url starts with:', avatar_url.substring(0, 50));
+      }
+      return res.status(400).json({
+        error: 'Avatar phải là URL hợp lệ hoặc base64 image'
+      });
+    }
+
+    // Validate độ dài: base64 có thể lớn (ảnh 5MB base64 ~7MB), URL thì giới hạn ngắn hơn
+    if (isUrl && avatar_url.length > 2000) {
+      return res.status(400).json({
+        error: 'Avatar URL quá dài'
+      });
+    }
+
+    // Base64: ảnh 5MB sẽ có base64 khoảng 6.6-7MB, cho phép đến 10MB để an toàn
+    if (isBase64 && avatar_url.length > 10 * 1024 * 1024) {
+      return res.status(400).json({
+        error: 'Image is too big'
+      });
+    }
+
+    // Cập nhật avatar
+    const updatedUser = await userRepository.update(userId, { avatar_url });
+
+    res.json({
+      message: 'Cập nhật avatar thành công',
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatar_url: updatedUser.avatar_url
+      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Upload avatar error:', error);
     }
     res.status(500).json({ error: 'Lỗi server' });
   }

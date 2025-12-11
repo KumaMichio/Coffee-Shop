@@ -136,8 +136,20 @@
 
 .profile-avatar-section {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   margin-bottom: 24px;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+  opacity: 1;
 }
 
 .profile-avatar {
@@ -149,6 +161,42 @@
   align-items: center;
   justify-content: center;
   border: 3px solid #e5e7eb;
+  transition: border-color 0.3s;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar {
+  border-color: #3b82f6;
+}
+
+.profile-avatar-image {
+  border: 3px solid #e5e7eb;
+  transition: border-color 0.3s;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-image {
+  border-color: #3b82f6;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.profile-avatar-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
 }
 
 .profile-form {
@@ -278,6 +326,12 @@
   font-size: 12px;
   color: #6b7280;
   margin-top: 8px;
+}
+
+.review-address {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
 }
 
 .empty-reviews,

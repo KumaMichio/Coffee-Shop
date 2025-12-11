@@ -1,6 +1,6 @@
 // src/pages/Home.js
 import React, { useEffect, useState } from 'react';
-import { Button, message } from 'antd';
+import { Button, message, Avatar } from 'antd';
 import { LogoutOutlined, HeartOutlined, EnvironmentOutlined, SearchOutlined, UserOutlined, InfoCircleOutlined, StarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import MapView from '../components/MapView';
@@ -9,6 +9,7 @@ import FilterBar from '../components/FilterBar';
 import DirectionsModal from '../components/DirectionsModal';
 import apiService from '../services/apiService';
 import authService from '../services/authService';
+import profileService from '../services/profileService';
 
 
 // Configure message globally
@@ -37,6 +38,7 @@ function Home() {
   const [showCafesOnMap, setShowCafesOnMap] = useState(true);
   const [directionsModalVisible, setDirectionsModalVisible] = useState(false);
   const [selectedCafeForDirections, setSelectedCafeForDirections] = useState(null);
+  const [userAvatar, setUserAvatar] = useState(null);
 
   const handleLogout = () => {
     authService.logout();
@@ -47,6 +49,22 @@ function Home() {
   const handleGoToFavorites = () => {
     navigate('/favorites');
   };
+
+  // Load user avatar khi component mount
+  useEffect(() => {
+    const loadUserAvatar = async () => {
+      try {
+        const data = await profileService.getProfile(1, 1);
+        if (data.user && data.user.avatar_url) {
+          setUserAvatar(data.user.avatar_url);
+        }
+      } catch (err) {
+        // Không hiển thị error nếu không load được avatar, chỉ log
+        console.log('Could not load user avatar:', err);
+      }
+    };
+    loadUserAvatar();
+  }, []);
 
   // Hàm áp dụng filters
   const applyFilters = (cafes, filterOptions) => {
@@ -521,12 +539,17 @@ function Home() {
             >
               <HeartOutlined /> おへわり
             </button>
-            <button 
-              className="nav-link"
+            <div 
+              className="nav-link nav-link-avatar"
               onClick={() => navigate('/profile')}
             >
-              プロビイル
-            </button>
+              <Avatar 
+                src={userAvatar} 
+                icon={<UserOutlined />}
+                size={32}
+                className="header-avatar"
+              />
+            </div>
             <button 
               className="nav-link nav-link-logout"
               onClick={handleLogout}
@@ -592,7 +615,11 @@ function Home() {
                         )}
                       </div>
                       <p className="cafe-address-text">{cafe.address || '新昕総 倦涉万'}</p>
-                      <p className="cafe-wifi-text">Wi-Fiあり</p>
+                      <p className="cafe-distance-text">
+                        {cafe.distance !== null && cafe.distance !== undefined 
+                          ? `${cafe.distance.toFixed(1)} km` 
+                          : '距離不明'}
+                      </p>
                       <div className="cafe-action-buttons">
                         <button
                           type="button"
@@ -600,7 +627,7 @@ function Home() {
                           onClick={(e) => handleOpenDirections(e, cafe)}
                           title="Chỉ đường"
                         >
-                          <EnvironmentOutlined /> 経路案内
+                          <EnvironmentOutlined />
                         </button>
                         <button
                           type="button"
@@ -619,7 +646,7 @@ function Home() {
                           }}
                           title="Đánh giá quán"
                         >
-                          <StarOutlined /> Rating
+                          <StarOutlined />
                         </button>
                       </div>
                     </div>

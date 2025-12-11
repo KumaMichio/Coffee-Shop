@@ -11,7 +11,9 @@ const profileRoutes = require('./api/profile');
 
 // Sử dụng CORS để cho phép frontend truy cập API
 app.use(cors());
-app.use(express.json());
+// Tăng limit body size để hỗ trợ upload avatar (base64 có thể lớn hơn file gốc ~33%)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cấu hình các route
 app.use('/api/cafes', cafeRoutes);
