@@ -66,7 +66,7 @@ const Auth = () => {
           <Card className="auth-form-card">
             <h1 className="auth-form-title">
               <span className="coffee-icon">☕</span>
-              Coffee Shop Finder
+              カフェ検索
             </h1>
             <Tabs 
               activeKey={activeTab} 
