@@ -51,10 +51,7 @@ const Auth = () => {
   return (
     <div className="auth-page">
       {/* Left Section - Background Image */}
-      <div 
-        className="auth-background-section"
-        style={{ backgroundImage: `url(${process.env.PUBLIC_URL || ''}/wp7575195-anime-cafe-wallpapers.jpg)` }}
-      >
+      <div className="auth-background-section">
         <div className="auth-background-content">
           {/* Background image only, no text */}
         </div>
@@ -66,7 +63,7 @@ const Auth = () => {
           <Card className="auth-form-card">
             <h1 className="auth-form-title">
               <span className="coffee-icon">☕</span>
-              カフェ検索
+              Coffee Shop Finder
             </h1>
             <Tabs 
               activeKey={activeTab} 

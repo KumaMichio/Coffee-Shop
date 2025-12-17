@@ -1,7 +1,7 @@
 /* Profile Page Styles */
 .profile-page {
   min-height: 100vh;
-  background: #f5e6d3; /* Màu nâu nhạt */
+  background: #d4c4a8; /* Màu nâu đậm hơn */
 }
 
 .profile-page-loading {
@@ -13,7 +13,7 @@
 
 /* Header */
 .profile-header {
-  background: #faf8f5; /* Màu nâu nhạt cho cards/panels */
+  background: #e8d4b8; /* Màu nâu đậm hơn cho cards/panels */
   border-bottom: 1px solid #d4a574; /* Border màu nâu */
   padding: 12px 24px;
   box-shadow: 0 1px 3px rgba(139, 111, 71, 0.1);
@@ -102,7 +102,7 @@
 
 .profile-header-nav .nav-link:hover,
 .profile-header-nav .nav-link.active {
-  background: #f5e6d3; /* Màu nâu nhạt khi hover */
+  background: #d4c4a8; /* Màu nâu đậm hơn khi hover */
   color: #1f2937;
 }
 
@@ -156,7 +156,7 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: #f5e6d3; /* Màu nâu nhạt */
+  background: #d4c4a8; /* Màu nâu đậm hơn */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,7 +271,7 @@
   display: flex;
   gap: 12px;
   padding: 12px;
-  background: #f5e6d3; /* Màu nâu nhạt */
+  background: #d4c4a8; /* Màu nâu đậm hơn */
   border-radius: 8px;
   border: 1px solid #d4a574; /* Border màu nâu */
 }
@@ -279,7 +279,7 @@
 .review-thumbnail {
   width: 60px;
   height: 60px;
-  background: #f5e6d3; /* Màu nâu nhạt */
+  background: #d4c4a8; /* Màu nâu đậm hơn */
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -367,7 +367,7 @@
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #f5e6d3; /* Màu nâu nhạt khi hover */
+  background: #d4c4a8; /* Màu nâu đậm hơn khi hover */
   border-color: #d4a574;
 }
 
@@ -389,7 +389,7 @@
 }
 
 .pagination-number:hover {
-  background: #f5e6d3; /* Màu nâu nhạt khi hover */
+  background: #d4c4a8; /* Màu nâu đậm hơn khi hover */
   border-color: #d4a574;
 }
 
