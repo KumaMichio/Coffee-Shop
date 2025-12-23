@@ -5,13 +5,24 @@ import { LoginOutlined, UserAddOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
+import { useTranslation } from '../hooks/useTranslation';
 import './Auth.css';
 
 const Auth = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
 
   const handleSuccess = () => {
+    // Check if user is admin and redirect accordingly
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user.role === 'admin') {
+        navigate('/admin');
+        return;
+      }
+    }
     navigate('/');
   };
 
@@ -21,7 +32,7 @@ const Auth = () => {
       label: (
         <span>
           <LoginOutlined />
-          ログイン
+          {t('auth.login')}
         </span>
       ),
       children: (
@@ -36,7 +47,7 @@ const Auth = () => {
       label: (
         <span>
           <UserAddOutlined />
-          新規登録
+          {t('auth.register')}
         </span>
       ),
       children: (
@@ -51,7 +62,12 @@ const Auth = () => {
   return (
     <div className="auth-page">
       {/* Left Section - Background Image */}
-      <div className="auth-background-section">
+      <div 
+        className="auth-background-section"
+        style={{
+          backgroundImage: `url('/wp7575195-anime-cafe-wallpapers.jpg')`
+        }}
+      >
         <div className="auth-background-content">
           {/* Background image only, no text */}
         </div>

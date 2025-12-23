@@ -1,5 +1,5 @@
 // src/components/MapView.js
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import goongjs from '@goongmaps/goong-js';
 import '@goongmaps/goong-js/dist/goong-js.css';
 
@@ -63,7 +63,8 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
       }
       mapReadyRef.current = false;
     };
-  }, []); // Empty dependency array - chỉ chạy 1 lần khi mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - chỉ chạy 1 lần khi mount (init map)
 
   // Custom smooth transition function
   const smoothTransitionTo = (targetCenter, duration = 1000) => {
@@ -274,6 +275,128 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
     };
   }, [center]);
 
+  // Helper function to format rating stars
+  const formatRatingStars = useCallback((rating) => {
+    if (!rating || rating === null || rating === undefined) {
+      return '<span style="color: #999;">☆☆☆☆☆</span> <span style="color: #999; font-size: 12px;">N/A</span>';
+    }
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - Math.ceil(rating);
+    return `
+      <span style="color: #fbbf24;">${'★'.repeat(fullStars)}${hasHalfStar ? '½' : ''}${'☆'.repeat(emptyStars)}</span>
+      <span style="color: #666; font-size: 12px; margin-left: 4px;">${rating.toFixed(1)}</span>
+    `;
+  }, []);
+
+  // Helper function to create popup HTML
+  const createPopupHTML = useCallback((cafe) => {
+    const rating = cafe.user_rating != null ? cafe.user_rating : (cafe.rating || null);
+    const distance = cafe.distance !== null && cafe.distance !== undefined 
+      ? `${cafe.distance.toFixed(1)} km` 
+      : '距離不明';
+    
+    // Get images (1-2 images)
+    const images = [];
+    if (cafe.photo_url) {
+      images.push(cafe.photo_url);
+    }
+    // If there are multiple photos in photos array
+    if (cafe.photos && Array.isArray(cafe.photos) && cafe.photos.length > 0) {
+      cafe.photos.slice(0, 2).forEach(photo => {
+        const photoUrl = photo.photo_reference || photo.reference || photo.url;
+        if (photoUrl && !images.includes(photoUrl)) {
+          images.push(photoUrl);
+        }
+      });
+    }
+    // Limit to 2 images
+    const displayImages = images.slice(0, 2);
+    
+    // Default image if no images available
+    const defaultImage = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&h=150&fit=crop&q=80';
+    
+    return `
+      <div style="
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        max-width: 280px;
+        padding: 0;
+      ">
+        ${displayImages.length > 0 ? `
+          <div style="
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+          ">
+            ${displayImages.map((img, idx) => `
+              <img 
+                src="${img}" 
+                alt="${cafe.name}"
+                style="
+                  width: ${displayImages.length === 1 ? '100%' : 'calc(50% - 2px)'};
+                  height: 100px;
+                  object-fit: cover;
+                  display: block;
+                "
+                onerror="this.src='${defaultImage}'"
+              />
+            `).join('')}
+          </div>
+        ` : `
+          <div style="
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-bottom: 8px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+          ">☕</div>
+        `}
+        <div style="padding: 0 4px 4px 4px;">
+          <h3 style="
+            margin: 0 0 6px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.3;
+          ">${cafe.name || 'Cafe'}</h3>
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+          ">
+            <div style="display: flex; align-items: center;">
+              ${formatRatingStars(rating)}
+            </div>
+            <span style="
+              color: #6b7280;
+              font-size: 12px;
+              background: #f3f4f6;
+              padding: 2px 6px;
+              border-radius: 4px;
+            ">📍 ${distance}</span>
+          </div>
+          ${cafe.address ? `
+            <p style="
+              margin: 0;
+              font-size: 12px;
+              color: #6b7280;
+              line-height: 1.4;
+            ">${cafe.address}</p>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }, [formatRatingStars]);
+
   // markers quán cà phê
   useEffect(() => {
     if (!mapRef.current) return;
@@ -313,14 +436,16 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
           }
 
           try {
+            const popup = new goongjs.Popup({ 
+              offset: 24,
+              closeButton: false,
+              closeOnClick: false,
+              className: 'cafe-marker-popup'
+            }).setHTML(createPopupHTML(cafe));
+
             const marker = new goongjs.Marker()
               .setLngLat([cafe.lng, cafe.lat])
-              .setPopup(
-                new goongjs.Popup({ offset: 24 }).setHTML(`
-                  <strong>${cafe.name || 'Cafe'}</strong><br/>
-                  ${cafe.address || ''}
-                `)
-              )
+              .setPopup(popup)
               .addTo(mapRef.current);
 
             // Add smooth fade-in animation when marker is added
@@ -329,6 +454,7 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
               markerElement.classList.add('goong-marker');
               markerElement.style.opacity = '0';
               markerElement.style.transition = 'opacity 0.3s ease-in';
+              markerElement.style.cursor = 'pointer';
               // Trigger fade-in after a small delay
               setTimeout(() => {
                 if (markerElement && markerElement.style) {
@@ -337,9 +463,64 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
               }, 10);
             }
 
-            if (onSelectCafe) {
-              const element = marker.getElement();
-              if (element) {
+            // Add hover event listeners to show popup on hover
+            const element = marker.getElement();
+            if (element) {
+              let hoverTimeout = null;
+              let isHovering = false;
+
+              // Show popup on mouseenter
+              element.addEventListener('mouseenter', () => {
+                isHovering = true;
+                if (hoverTimeout) {
+                  clearTimeout(hoverTimeout);
+                  hoverTimeout = null;
+                }
+                if (marker.getPopup() && !marker.getPopup().isOpen()) {
+                  marker.togglePopup();
+                }
+              });
+
+              // Hide popup on mouseleave
+              element.addEventListener('mouseleave', () => {
+                isHovering = false;
+                // Wait a bit to see if mouse moves to popup
+                hoverTimeout = setTimeout(() => {
+                  if (!isHovering && marker.getPopup() && marker.getPopup().isOpen()) {
+                    marker.togglePopup();
+                  }
+                }, 200);
+              });
+
+              // Also handle popup hover
+              const popup = marker.getPopup();
+              if (popup) {
+                // Wait for popup to be added to DOM
+                setTimeout(() => {
+                  const popupElement = popup.getElement();
+                  if (popupElement) {
+                    popupElement.addEventListener('mouseenter', () => {
+                      isHovering = true;
+                      if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                      }
+                    });
+
+                    popupElement.addEventListener('mouseleave', () => {
+                      isHovering = false;
+                      hoverTimeout = setTimeout(() => {
+                        if (!isHovering && popup.isOpen()) {
+                          marker.togglePopup();
+                        }
+                      }, 200);
+                    });
+                  }
+                }, 100);
+              }
+
+              // Click event to select cafe
+              if (onSelectCafe) {
                 element.addEventListener('click', () => onSelectCafe(cafe));
               }
             }
@@ -355,7 +536,7 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
     };
 
     addMarkers();
-  }, [cafes, onSelectCafe]);
+  }, [cafes, onSelectCafe, createPopupHTML]);
 
   // marker vị trí hiện tại
   useEffect(() => {

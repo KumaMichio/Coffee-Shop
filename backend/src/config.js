@@ -11,7 +11,7 @@ const config = {
     password: String(process.env.DB_PASSWORD || 'postgres')
   },
   goong: {
-    restApiKey: process.env.GOONG_REST_API_KEY || ''
+    restApiKey: process.env.GOONG_API_KEY || process.env.GOONG_REST_API_KEY || ''
   },
   google: {
     placesApiKey: process.env.GOOGLE_PLACES_API_KEY || ''

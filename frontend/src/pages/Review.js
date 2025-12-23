@@ -57,12 +57,24 @@ function Review() {
       setAvgRating(reviewData.average_rating);
       
       // Cập nhật cafe object với rating mới
-      if (reviewData.average_rating != null) {
+      if (reviewData.average_rating != null || reviewData.review_count !== undefined) {
         setCafe(prev => ({
           ...prev,
           user_rating: reviewData.average_rating,
           review_count: reviewData.review_count || 0
         }));
+      }
+      
+      // Reload my review để cập nhật form
+      if (cafeId) {
+        try {
+          const myReviewResponse = await reviewService.getMyReview(cafeId);
+          if (myReviewResponse.review) {
+            // Form sẽ tự động cập nhật khi existingReview thay đổi
+          }
+        } catch (err) {
+          console.log('Reload my review:', err.message);
+        }
       }
     } catch (err) {
       console.error('Reload reviews error:', err);
@@ -114,19 +126,36 @@ function Review() {
         </div>
 
         <div className="review-page-right">
-          {reviews.length > 0 && (
-            <Card className="reviews-list-card">
-              <h3>他のレビュー ({reviews.length})</h3>
-              {avgRating && (
+          <Card className="reviews-list-card">
+            <div className="reviews-summary">
+              <h3>レビュー一覧</h3>
+              {avgRating !== null && avgRating !== undefined ? (
                 <div className="avg-rating-display">
-                  平均評価: {avgRating.toFixed(1)} ⭐
+                  <div className="avg-rating-stars">
+                    {'★'.repeat(Math.floor(avgRating))}
+                    {avgRating % 1 >= 0.5 ? '½' : ''}
+                    {'☆'.repeat(5 - Math.ceil(avgRating))}
+                  </div>
+                  <div className="avg-rating-text">
+                    <span className="avg-rating-number">{avgRating.toFixed(1)}</span>
+                    <span className="avg-rating-label">平均評価</span>
+                    {reviews.length > 0 && (
+                      <span className="review-count-label">({reviews.length}件のレビュー)</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="no-rating-yet">
+                  <span>まだ評価がありません</span>
                 </div>
               )}
+            </div>
+            {reviews.length > 0 ? (
               <div className="reviews-list">
                 {reviews.map((review) => (
-                  <div key={review.id} className="review-item">
+                  <div key={review.id || review.user_id} className="review-item">
                     <div className="review-item-header">
-                      <span className="review-username">{review.username}</span>
+                      <span className="review-username">{review.username || '匿名ユーザー'}</span>
                       <span className="review-rating">
                         {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                       </span>
@@ -134,17 +163,27 @@ function Review() {
                     {review.comment && (
                       <p className="review-comment">{review.comment}</p>
                     )}
-                    {review.is_child_friendly && (
-                      <span className="review-tag">子育を是付</span>
-                    )}
-                    <div className="review-date">
-                      {new Date(review.created_at).toLocaleDateString('ja-JP')}
+                    <div className="review-item-footer">
+                      {review.is_child_friendly && (
+                        <span className="review-tag">子育て対応</span>
+                      )}
+                      <div className="review-date">
+                        {new Date(review.created_at || review.updated_at).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </Card>
-          )}
+            ) : (
+              <div className="no-reviews-message">
+                <p>まだレビューがありません。最初のレビューを投稿してみませんか？</p>
+              </div>
+            )}
+          </Card>
         </div>
       </div>
     </div>

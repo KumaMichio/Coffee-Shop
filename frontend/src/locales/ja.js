@@ -1,0 +1,187 @@
+// frontend/src/locales/ja.js
+export default {
+  // Common
+  common: {
+    loading: '読み込み中...',
+    error: 'エラー',
+    success: '成功',
+    cancel: 'キャンセル',
+    save: '保存',
+    edit: '編集',
+    delete: '削除',
+    close: '閉じる',
+    confirm: '確認',
+    back: '戻る',
+    next: '次へ',
+    previous: '前へ',
+    search: '検索',
+    filter: 'フィルター',
+    sort: '並び替え',
+    submit: '送信',
+    logout: 'ログアウト',
+    login: 'ログイン',
+    register: '新規登録',
+    settings: '設定',
+    profile: 'プロフィール',
+    favorites: 'お気に入り',
+    reviews: 'レビュー',
+    cafes: 'カフェ',
+    distance: '距離',
+    rating: '評価',
+    address: '住所',
+    name: '名前',
+    email: 'メールアドレス',
+    password: 'パスワード',
+    username: 'ユーザー名',
+    language: '言語',
+    selectLanguage: '言語を選択'
+  },
+
+  // Auth
+  auth: {
+    login: 'ログイン',
+    register: '新規登録',
+    email: 'メールアドレス',
+    password: 'パスワード',
+    confirmPassword: 'パスワード確認',
+    username: 'ユーザー名',
+    loginSuccess: 'ログインに成功しました！',
+    registerSuccess: '登録に成功しました！',
+    loginFailed: 'ログインに失敗しました',
+    registerFailed: '登録に失敗しました',
+    emailRequired: 'メールアドレスを入力してください！',
+    emailInvalid: 'メールアドレスの形式が正しくありません！',
+    passwordRequired: 'パスワードを入力してください！',
+    usernameRequired: 'ユーザー名を入力してください！',
+    passwordMinLength: 'パスワードは6文字以上で入力してください！',
+    usernameMinLength: 'ユーザー名は3文字以上で入力してください！',
+    noAccount: 'アカウントをお持ちでない方は',
+    haveAccount: 'すでにアカウントをお持ちの方は',
+    clickHere: 'こちらをクリック'
+  },
+
+  // Home
+  home: {
+    title: 'カフェナン',
+    searchPlaceholder: '新話カフェ',
+    locateMe: '現在地から探る',
+    favorites: 'おへわり',
+    logout: 'ログアウト',
+    cafeList: 'カフェ一覧',
+    noCafes: 'カフェを探すには、以下のいずれかを選択してください：',
+    noCafesHint1: '📍 「現在地から探る」ボタンをクリック',
+    noCafesHint2: '🔍 カフェ名または住所で検索',
+    noFilteredCafes: 'フィルター条件に合うカフェが見つかりませんでした。',
+    reviews: 'レビュー',
+    directions: '経路案内',
+    addToFavorites: 'お気に入りに追加',
+    removeFromFavorites: 'お気に入りから削除',
+    rating: '評価',
+    distanceUnknown: '距離不明',
+    page: 'ページ',
+    of: '/',
+    total: '全',
+    items: '件',
+    mapDisplay: '地図表示',
+    showCafesOnMap: '地図上のカフェ',
+    emptySearch: '検索キーワードを入力してください',
+    searchError: '検索エラー',
+    locationError: '位置情報を取得できませんでした',
+    noCafesNearby: '近くにカフェが見つかりませんでした'
+  },
+
+  // Profile
+  profile: {
+    title: 'プロフィール',
+    editProfile: 'プロフィール編集',
+    changePassword: 'パスワード変更',
+    settings: '設定',
+    myReviews: '私のレビュー',
+    username: 'ユーザー名',
+    email: 'メールアドレス',
+    currentPassword: '現在のパスワード',
+    newPassword: '新しいパスワード',
+    confirmPassword: 'パスワード確認',
+    avatar: 'アバター',
+    updateSuccess: 'プロフィールを更新しました',
+    updateFailed: 'プロフィールの更新に失敗しました',
+    passwordChangeSuccess: 'パスワードを変更しました',
+    passwordChangeFailed: 'パスワードの変更に失敗しました',
+    passwordMismatch: '新しいパスワードと確認が一致しません',
+    passwordMinLength: '新しいパスワードは6文字以上である必要があります',
+    uploadImageOnly: '画像ファイルのみアップロードできます',
+    uploadSuccess: 'アバターをアップロードしました',
+    uploadFailed: 'アバターのアップロードに失敗しました',
+    noReviews: 'レビューがありません',
+    language: '言語',
+    selectLanguage: '言語を選択',
+    japanese: '日本語',
+    vietnamese: 'Tiếng Việt',
+    english: 'English'
+  },
+
+  // Review
+  review: {
+    title: 'レビュー投稿画面',
+    rating: '評価 (1-5星)',
+    comment: '評巾',
+    commentPlaceholder: 'レビューを詰訓なくだざさい...',
+    selectRating: 'タップして評価を選択してください',
+    selected: '選択',
+    star: '星',
+    stars: '星',
+    submit: '送信',
+    cancel: 'キャンセル',
+    submitSuccess: 'レビューを投稿しました',
+    submitFailed: 'レビューの投稿に失敗しました',
+    ratingRequired: '評価を選択してください',
+    averageRating: '平均評価',
+    reviewCount: 'レビュー',
+    noReviews: 'レビューがありません',
+    myReview: '私のレビュー',
+    editReview: 'レビューを編集',
+    deleteReview: 'レビューを削除',
+    deleteConfirm: 'レビューを削除してもよろしいですか？',
+    deleteSuccess: 'レビューを削除しました',
+    deleteFailed: 'レビューの削除に失敗しました'
+  },
+
+  // Favorites
+  favorites: {
+    title: 'お気に入り',
+    noFavorites: 'お気に入りのカフェがありません',
+    removeSuccess: 'お気に入りから削除しました',
+    removeFailed: '削除に失敗しました',
+    directions: '経路案内',
+    remove: '削除'
+  },
+
+  // Promotion
+  promotion: {
+    newPromotion: '🎉 新しいプロモーション！',
+    discount: '割引',
+    remaining: '残り',
+    expired: '期限切れ',
+    days: '日',
+    hours: '時間',
+    minutes: '分',
+    details: 'プロモーション詳細',
+    percentage: '割引',
+    fixedAmount: '割引',
+    freeItem: '無料アイテム',
+    time: '時間',
+    cafe: 'カフェ',
+    description: '説明'
+  },
+
+  // Directions
+  directions: {
+    title: '経路案内',
+    selectApp: 'アプリを選択',
+    googleMaps: 'Google Maps',
+    waze: 'Waze',
+    appleMaps: 'Apple Maps',
+    cancel: 'キャンセル'
+  }
+};
+

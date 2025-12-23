@@ -1,0 +1,187 @@
+// frontend/src/locales/vi.js
+export default {
+  // Common
+  common: {
+    loading: 'Đang tải...',
+    error: 'Lỗi',
+    success: 'Thành công',
+    cancel: 'Hủy',
+    save: 'Lưu',
+    edit: 'Chỉnh sửa',
+    delete: 'Xóa',
+    close: 'Đóng',
+    confirm: 'Xác nhận',
+    back: 'Quay lại',
+    next: 'Tiếp theo',
+    previous: 'Trước',
+    search: 'Tìm kiếm',
+    filter: 'Lọc',
+    sort: 'Sắp xếp',
+    submit: 'Gửi',
+    logout: 'Đăng xuất',
+    login: 'Đăng nhập',
+    register: 'Đăng ký',
+    settings: 'Cài đặt',
+    profile: 'Hồ sơ',
+    favorites: 'Yêu thích',
+    reviews: 'Đánh giá',
+    cafes: 'Quán cà phê',
+    distance: 'Khoảng cách',
+    rating: 'Đánh giá',
+    address: 'Địa chỉ',
+    name: 'Tên',
+    email: 'Email',
+    password: 'Mật khẩu',
+    username: 'Tên người dùng',
+    language: 'Ngôn ngữ',
+    selectLanguage: 'Chọn ngôn ngữ'
+  },
+
+  // Auth
+  auth: {
+    login: 'Đăng nhập',
+    register: 'Đăng ký',
+    email: 'Email',
+    password: 'Mật khẩu',
+    confirmPassword: 'Xác nhận mật khẩu',
+    username: 'Tên người dùng',
+    loginSuccess: 'Đăng nhập thành công!',
+    registerSuccess: 'Đăng ký thành công!',
+    loginFailed: 'Đăng nhập thất bại',
+    registerFailed: 'Đăng ký thất bại',
+    emailRequired: 'Vui lòng nhập email!',
+    emailInvalid: 'Email không hợp lệ!',
+    passwordRequired: 'Vui lòng nhập mật khẩu!',
+    usernameRequired: 'Vui lòng nhập tên người dùng!',
+    passwordMinLength: 'Mật khẩu phải có ít nhất 6 ký tự!',
+    usernameMinLength: 'Tên người dùng phải có ít nhất 3 ký tự!',
+    noAccount: 'Chưa có tài khoản?',
+    haveAccount: 'Đã có tài khoản?',
+    clickHere: 'Nhấn vào đây'
+  },
+
+  // Home
+  home: {
+    title: 'Cà Phê Nan',
+    searchPlaceholder: 'Tìm kiếm quán cà phê...',
+    locateMe: 'Vị trí của tôi',
+    favorites: 'Yêu thích',
+    logout: 'Đăng xuất',
+    cafeList: 'Danh sách quán',
+    noCafes: 'Để tìm quán cà phê, vui lòng chọn một trong các tùy chọn sau:',
+    noCafesHint1: '📍 Nhấn nút "Vị trí của tôi"',
+    noCafesHint2: '🔍 Tìm kiếm theo tên quán hoặc địa chỉ',
+    noFilteredCafes: 'Không tìm thấy quán nào phù hợp với bộ lọc.',
+    reviews: 'Đánh giá',
+    directions: 'Chỉ đường',
+    addToFavorites: 'Thêm vào yêu thích',
+    removeFromFavorites: 'Xóa khỏi yêu thích',
+    rating: 'Đánh giá',
+    distanceUnknown: 'Khoảng cách không xác định',
+    page: 'Trang',
+    of: '/',
+    total: 'Tổng',
+    items: 'quán',
+    mapDisplay: 'Hiển thị bản đồ',
+    showCafesOnMap: 'Hiển thị quán trên bản đồ',
+    emptySearch: 'Vui lòng nhập từ khóa tìm kiếm',
+    searchError: 'Lỗi tìm kiếm',
+    locationError: 'Không thể lấy vị trí',
+    noCafesNearby: 'Không tìm thấy quán cà phê nào gần đây'
+  },
+
+  // Profile
+  profile: {
+    title: 'Hồ sơ',
+    editProfile: 'Chỉnh sửa hồ sơ',
+    changePassword: 'Đổi mật khẩu',
+    settings: 'Cài đặt',
+    myReviews: 'Đánh giá của tôi',
+    username: 'Tên người dùng',
+    email: 'Email',
+    currentPassword: 'Mật khẩu hiện tại',
+    newPassword: 'Mật khẩu mới',
+    confirmPassword: 'Xác nhận mật khẩu',
+    avatar: 'Ảnh đại diện',
+    updateSuccess: 'Cập nhật hồ sơ thành công',
+    updateFailed: 'Không thể cập nhật hồ sơ',
+    passwordChangeSuccess: 'Đổi mật khẩu thành công',
+    passwordChangeFailed: 'Không thể đổi mật khẩu',
+    passwordMismatch: 'Mật khẩu mới và xác nhận không khớp',
+    passwordMinLength: 'Mật khẩu mới phải có ít nhất 6 ký tự',
+    uploadImageOnly: 'Chỉ có thể upload file ảnh',
+    uploadSuccess: 'Đã tải lên ảnh đại diện',
+    uploadFailed: 'Không thể tải lên ảnh đại diện',
+    noReviews: 'Chưa có đánh giá nào',
+    language: 'Ngôn ngữ',
+    selectLanguage: 'Chọn ngôn ngữ',
+    japanese: '日本語',
+    vietnamese: 'Tiếng Việt',
+    english: 'English'
+  },
+
+  // Review
+  review: {
+    title: 'Đánh giá quán',
+    rating: 'Đánh giá (1-5 sao)',
+    comment: 'Bình luận',
+    commentPlaceholder: 'Chia sẻ cảm nhận của bạn...',
+    selectRating: 'Nhấn để chọn đánh giá',
+    selected: 'Đã chọn',
+    star: 'sao',
+    stars: 'sao',
+    submit: 'Gửi',
+    cancel: 'Hủy',
+    submitSuccess: 'Đã gửi đánh giá',
+    submitFailed: 'Không thể gửi đánh giá',
+    ratingRequired: 'Vui lòng chọn đánh giá',
+    averageRating: 'Đánh giá trung bình',
+    reviewCount: 'đánh giá',
+    noReviews: 'Chưa có đánh giá nào',
+    myReview: 'Đánh giá của tôi',
+    editReview: 'Chỉnh sửa đánh giá',
+    deleteReview: 'Xóa đánh giá',
+    deleteConfirm: 'Bạn có chắc muốn xóa đánh giá này?',
+    deleteSuccess: 'Đã xóa đánh giá',
+    deleteFailed: 'Không thể xóa đánh giá'
+  },
+
+  // Favorites
+  favorites: {
+    title: 'Yêu thích',
+    noFavorites: 'Chưa có quán yêu thích nào',
+    removeSuccess: 'Đã xóa khỏi danh sách yêu thích',
+    removeFailed: 'Không thể xóa',
+    directions: 'Chỉ đường',
+    remove: 'Xóa yêu thích'
+  },
+
+  // Promotion
+  promotion: {
+    newPromotion: '🎉 Khuyến mãi mới!',
+    discount: 'Giảm giá',
+    remaining: 'Còn lại',
+    expired: 'Đã hết hạn',
+    days: 'ngày',
+    hours: 'giờ',
+    minutes: 'phút',
+    details: 'Chi tiết khuyến mãi',
+    percentage: 'Giảm',
+    fixedAmount: 'Giảm',
+    freeItem: 'Tặng',
+    time: 'Thời gian',
+    cafe: 'Quán',
+    description: 'Mô tả'
+  },
+
+  // Directions
+  directions: {
+    title: 'Chỉ đường',
+    selectApp: 'Chọn ứng dụng',
+    googleMaps: 'Google Maps',
+    waze: 'Waze',
+    appleMaps: 'Apple Maps',
+    cancel: 'Hủy'
+  }
+};
+

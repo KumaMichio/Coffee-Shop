@@ -18,10 +18,13 @@ class AuthService {
       throw new Error(data.error || 'Đăng ký thất bại');
     }
 
-    // Lưu token vào localStorage
+    // Lưu token và user vào localStorage
     if (data.token) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user && data.user.role) {
+        localStorage.setItem('userRole', data.user.role);
+      }
     }
 
     return data;
@@ -43,10 +46,13 @@ class AuthService {
       throw new Error(data.error || 'Đăng nhập thất bại');
     }
 
-    // Lưu token vào localStorage
+    // Lưu token và user vào localStorage
     if (data.token) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user && data.user.role) {
+        localStorage.setItem('userRole', data.user.role);
+      }
     }
 
     return data;
@@ -56,6 +62,14 @@ class AuthService {
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+  }
+
+  // Kiểm tra có phải admin không
+  isAdmin() {
+    const userRole = localStorage.getItem('userRole');
+    const user = this.getCurrentUser();
+    return userRole === 'admin' || (user && user.role === 'admin');
   }
 
   // Lấy token hiện tại

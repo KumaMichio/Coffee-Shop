@@ -71,9 +71,9 @@ router.post('/register', async (req, res) => {
     // Tạo user mới
     const user = await userRepository.create(username, email, passwordHash);
 
-    // Tạo JWT token
+    // Tạo JWT token (role mặc định là 'user')
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: 'user' },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -84,7 +84,8 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: 'user'
       }
     });
   } catch (error) {
@@ -121,9 +122,9 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Tạo JWT token
+    // Tạo JWT token (bao gồm role)
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.role || 'user' },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -134,7 +135,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: user.role || 'user'
       }
     });
   } catch (error) {
@@ -153,8 +155,13 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User không tồn tại' });
     }
 
-    // Giữ nguyên format như cũ để không phá test
-    res.json({ user });
+    // Trả về user với role
+    res.json({ 
+      user: {
+        ...user,
+        role: user.role || 'user'
+      }
+    });
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {
       console.error('Get me error:', error);

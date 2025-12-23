@@ -3,16 +3,19 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import authService from '../services/authService';
+import { useTranslation } from '../hooks/useTranslation';
 
 const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await authService.login(values.email, values.password);
-      message.success('ログインに成功しました！');
-      if (onSuccess) onSuccess();
+      const data = await authService.login(values.email, values.password);
+      message.success(t('auth.loginSuccess'));
+      // onSuccess will handle redirect based on user role
+      if (onSuccess) onSuccess(data);
     } catch (error) {
       message.error(error.message);
     } finally {
@@ -28,28 +31,28 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
       layout="vertical"
     >
       <Form.Item
-        label="メールアドレス"
+        label={t('auth.email')}
         name="email"
         rules={[
-          { required: true, message: 'メールアドレスを入力してください！' },
-          { type: 'email', message: 'メールアドレスの形式が正しくありません！' },
+          { required: true, message: t('auth.emailRequired') },
+          { type: 'email', message: t('auth.emailInvalid') },
         ]}
       >
         <Input 
           prefix={<UserOutlined />} 
-          placeholder="メールアドレス" 
+          placeholder={t('auth.email')} 
           size="large"
         />
       </Form.Item>
 
       <Form.Item
-        label="パスワード"
+        label={t('auth.password')}
         name="password"
-        rules={[{ required: true, message: 'パスワードを入力してください！' }]}
+        rules={[{ required: true, message: t('auth.passwordRequired') }]}
       >
         <Input.Password
           prefix={<LockOutlined />}
-          placeholder="パスワード"
+          placeholder={t('auth.password')}
           size="large"
         />
       </Form.Item>
@@ -62,14 +65,14 @@ const LoginForm = ({ onSuccess, onSwitchToRegister }) => {
           block 
           size="large"
         >
-          ログイン
+          {t('auth.login')}
         </Button>
       </Form.Item>
 
       <div style={{ textAlign: 'center' }}>
-        アカウントをお持ちでない方は{' '}
+        {t('auth.noAccount')}{' '}
         <Button type="link" onClick={onSwitchToRegister}>
-          新規登録
+          {t('auth.register')}
         </Button>
       </div>
     </Form>

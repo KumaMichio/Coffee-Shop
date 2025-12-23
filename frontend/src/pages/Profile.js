@@ -12,10 +12,13 @@ import {
   CameraOutlined
 } from '@ant-design/icons';
 import profileService from '../services/profileService';
+import LanguageSelector from '../components/LanguageSelector';
+import { useTranslation } from '../hooks/useTranslation';
 import './Profile.css';
 
 function Profile() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [user, setUser] = useState(null);
@@ -414,6 +417,15 @@ function Profile() {
                   children: (
                     <div className="photos-list">
                       <div className="empty-photos">写真がありません</div>
+                    </div>
+                  )
+                },
+                {
+                  key: 'settings',
+                  label: t('common.settings'),
+                  children: (
+                    <div className="settings-list">
+                      <LanguageSelector />
                     </div>
                   )
                 }

@@ -5,7 +5,7 @@ class UserRepository {
   // Tìm user theo email
   async findByEmail(email) {
     const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
+      'SELECT id, username, email, password_hash, role, avatar_url, created_at FROM users WHERE email = $1',
       [email]
     );
     return result.rows[0];
@@ -23,7 +23,7 @@ class UserRepository {
   // Tìm user theo ID
   async findById(id) {
     const result = await pool.query(
-      'SELECT id, username, email, avatar_url, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, avatar_url, role, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];

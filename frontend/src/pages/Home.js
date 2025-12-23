@@ -1,15 +1,15 @@
 // src/pages/Home.js
-import React, { useEffect, useState } from 'react';
-import { Button, message, Avatar } from 'antd';
-import { LogoutOutlined, HeartOutlined, EnvironmentOutlined, SearchOutlined, UserOutlined, InfoCircleOutlined, StarOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useCallback } from 'react';
+import { message, Avatar } from 'antd';
+import { LogoutOutlined, HeartOutlined, EnvironmentOutlined, SearchOutlined, UserOutlined, StarOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import MapView from '../components/MapView';
-import SearchBar from '../components/SearchBar';
-import FilterBar from '../components/FilterBar';
 import DirectionsModal from '../components/DirectionsModal';
+import PromotionNotification from '../components/PromotionNotification';
 import apiService from '../services/apiService';
 import authService from '../services/authService';
 import profileService from '../services/profileService';
+import { useTranslation } from '../hooks/useTranslation';
 
 
 // Configure message globally
@@ -17,13 +17,13 @@ import profileService from '../services/profileService';
 
 function Home() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [center, setCenter] = useState(null);
   const [cafes, setCafes] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [sort, setSort] = useState('rating');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [mode, setMode] = useState('nearby'); // 'nearby' | 'search'
   const [messageApi, contextHolder] = message.useMessage();
   const [filters, setFilters] = useState({
@@ -42,7 +42,7 @@ function Home() {
 
   const handleLogout = () => {
     authService.logout();
-    message.success('Đã đăng xuất');
+    message.success(t('common.logout'));
     navigate('/auth');
   };
 
@@ -111,194 +111,15 @@ function Home() {
     return filtered;
   };
 
-  // Listen for review submission to refresh cafe list
-  useEffect(() => {
-    const handleReviewSubmitted = async (event) => {
-      // Refresh cafe list khi có review mới được submit
-      console.log('Review submitted, refreshing cafe list...', event.detail);
-      if (mode === 'nearby' && currentLocation) {
-        await handleLocateMe(sort);
-        messageApi.success('Đã cập nhật rating của quán!');
-      } else if (mode === 'search' && searchKeyword.trim()) {
-        await handleSearch(searchKeyword);
-        messageApi.success('Đã cập nhật rating của quán!');
-      }
-    };
-
-    window.addEventListener('reviewSubmitted', handleReviewSubmitted);
-    return () => {
-      window.removeEventListener('reviewSubmitted', handleReviewSubmitted);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, currentLocation, searchKeyword, sort, messageApi]);
-
-  // load initial: thử lấy vị trí hiện tại → nearby 2km
-  useEffect(() => {
-    const init = async () => {
-      try {
-        setError('');
-        // fallback center: Hà Nội
-        let centerLat = 21.028511;
-        let centerLng = 105.804817;
-
-        if (navigator.geolocation) {
-          await new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                const { latitude, longitude } = pos.coords;
-                centerLat = latitude;
-                centerLng = longitude;
-                const location = { lat: latitude, lng: longitude };
-                console.log('Initial GPS location:', {
-                  lat: location.lat,
-                  lng: location.lng,
-                  accuracy: pos.coords.accuracy
-                });
-                setCurrentLocation(location);
-                resolve();
-              },
-              (err) => {
-                console.warn('Initial geolocation failed:', err);
-                resolve();
-              },
-              { 
-                enableHighAccuracy: true, 
-                timeout: 10000,
-                maximumAge: 0  // Không sử dụng cache
-              }
-            );
-          });
-        }
-
-        setCenter({ lat: centerLat, lng: centerLng });
-        setLoading(true);
-        const list = await apiService.getNearbyCafes({
-          lat: centerLat,
-          lng: centerLng,
-          radius: 2000,
-          sort: 'distance'
-        });
-        
-        console.log('Initial load results:', list.length, 'cafes found');
-        
-        if (!Array.isArray(list)) {
-          console.error('Invalid response format:', list);
-          setError('Dữ liệu trả về không đúng định dạng');
-          setCafes([]);
-          setAllCafes([]);
-          return;
-        }
-        
-        setAllCafes(list);
-        // Apply filters with current filters state
-        const filtered = applyFilters(list, filters);
-        setCafes(filtered);
-        setCurrentPage(1); // Reset to page 1 when loading new cafes
-        console.log('After filter:', filtered.length, 'cafes');
-        setMode('nearby');
-        setSort('distance');
-      } catch (err) {
-        console.error(err);
-        setError('Không thể tải dữ liệu ban đầu.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Chỉ chạy 1 lần khi mount, filters sẽ được apply sau khi load xong
-
-  // Khi user bấm Tìm kiếm
-  const handleSearch = async (keyword) => {
-    const q = keyword ?? searchKeyword;
-    const trimmed = q.trim();
-
-    if (!trimmed) {
-      // ô rỗng → quay lại nearby (nếu có currentLocation)
-      if (currentLocation) {
-        await handleLocateMe();
-      }
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError('');
-      const list = await apiService.searchCafes({
-        query: trimmed,
-        lat: currentLocation?.lat,
-        lng: currentLocation?.lng,
-        sort
-      });
-      
-      console.log('Search results:', list.length, 'cafes found');
-      
-      if (!Array.isArray(list)) {
-        console.error('Invalid response format:', list);
-        setError('Dữ liệu trả về không đúng định dạng');
-        setCafes([]);
-        setAllCafes([]);
-        return;
-      }
-      
-      setAllCafes(list);
-      const filtered = applyFilters(list, filters);
-      setCafes(filtered);
-      setCurrentPage(1); // Reset to page 1 when loading new cafes
-      
-      console.log('After filter:', filtered.length, 'cafes');
-      
-      if (filtered.length > 0) {
-        setCenter({ lat: filtered[0].lat, lng: filtered[0].lng });
-      } else if (list.length > 0) {
-        // If all filtered out, still center on first result
-        setCenter({ lat: list[0].lat, lng: list[0].lng });
-      }
-      setMode('search');
-      setSearchKeyword(trimmed);
-    } catch (err) {
-      console.error('Search error:', err);
-      setError(`Lỗi khi tìm kiếm quán cà phê: ${err.message}`);
-      setCafes([]);
-      setAllCafes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Khi user gõ trong ô search
-  const handleKeywordChange = async (value) => {
-    setSearchKeyword(value);
-    if (value.trim() === '') {
-      // reset: quay lại nearby (nếu có vị trí)
-      if (currentLocation) {
-        await handleLocateMe();
-      }
-    }
-  };
-
-  // Khi user đổi sort
-  const handleSortChange = async (value) => {
-    setSort(value);
-    // re-run search/nearby với sort mới
-    if (mode === 'search' && searchKeyword.trim()) {
-      await handleSearch(searchKeyword);
-    } else if (mode === 'nearby' && currentLocation) {
-      await handleLocateMe(value);
-    }
-  };
-
   // Lấy quán gần "vị trí của tôi" trong 2km
-  const handleLocateMe = async (sortOverride) => {
+  const handleLocateMe = useCallback(async (sortOverride) => {
     if (!navigator.geolocation && !currentLocation) {
-      setError('Trình duyệt của bạn không hỗ trợ GPS.');
+      messageApi.warning('Trình duyệt của bạn không hỗ trợ GPS.');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       let loc = currentLocation;
 
@@ -362,7 +183,7 @@ function Home() {
         }, 50);
       }
 
-      const s = sortOverride || 'distance';
+      const s = sortOverride || sort || 'distance';
       const list = await apiService.getNearbyCafes({
         lat: loc.lat,
         lng: loc.lng,
@@ -375,7 +196,7 @@ function Home() {
 
       if (!Array.isArray(list)) {
         console.error('Invalid response format:', list);
-        setError('Dữ liệu trả về không đúng định dạng');
+        messageApi.error('Dữ liệu trả về không đúng định dạng');
         setCafes([]);
         setAllCafes([]);
         return;
@@ -383,7 +204,7 @@ function Home() {
 
       if (list.length === 0) {
         console.warn('No cafes found nearby');
-        setError('Không tìm thấy quán cà phê nào gần đây');
+        messageApi.info('Không tìm thấy quán cà phê nào gần đây');
         setCafes([]);
         setAllCafes([]);
         return;
@@ -397,7 +218,7 @@ function Home() {
       console.log('After filter:', filtered.length, 'cafes');
       if (filtered.length === 0 && list.length > 0) {
         console.warn('All cafes filtered out! Filters:', filters);
-        setError('Không có quán nào phù hợp với bộ lọc đã chọn. Hãy thử điều chỉnh bộ lọc.');
+        messageApi.warning('Không có quán nào phù hợp với bộ lọc đã chọn. Hãy thử điều chỉnh bộ lọc.');
       }
       
       setMode('nearby');
@@ -407,10 +228,102 @@ function Home() {
       setTimeout(() => setShouldZoomToLocation(false), 2000);
     } catch (err) {
       console.error('Locate me error', err);
-      setError('Không thể lấy vị trí hiện tại hoặc dữ liệu quán gần bạn.');
+      messageApi.error('Không thể lấy vị trí hiện tại hoặc dữ liệu quán gần bạn.');
     } finally {
       setLoading(false);
     }
+  }, [currentLocation, sort, filters]);
+
+  // Khi user bấm Tìm kiếm
+  const handleSearch = useCallback(async (keyword) => {
+    const q = keyword ?? searchKeyword;
+    const trimmed = q.trim();
+
+    if (!trimmed) {
+      // ô rỗng → không làm gì, yêu cầu user nhập từ khóa
+      messageApi.warning('検索キーワードを入力してください');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const list = await apiService.searchCafes({
+        query: trimmed,
+        lat: currentLocation?.lat,
+        lng: currentLocation?.lng,
+        sort
+      });
+      
+      console.log('Search results:', list.length, 'cafes found');
+      
+      if (!Array.isArray(list)) {
+        console.error('Invalid response format:', list);
+        messageApi.error('Dữ liệu trả về không đúng định dạng');
+        setCafes([]);
+        setAllCafes([]);
+        return;
+      }
+      
+      setAllCafes(list);
+      const filtered = applyFilters(list, filters);
+      setCafes(filtered);
+      setCurrentPage(1); // Reset to page 1 when loading new cafes
+      
+      console.log('After filter:', filtered.length, 'cafes');
+      
+      if (filtered.length > 0) {
+        setCenter({ lat: filtered[0].lat, lng: filtered[0].lng });
+      } else if (list.length > 0) {
+        // If all filtered out, still center on first result
+        setCenter({ lat: list[0].lat, lng: list[0].lng });
+      }
+      setMode('search');
+      setSearchKeyword(trimmed);
+    } catch (err) {
+      console.error('Search error:', err);
+      messageApi.error(`Lỗi khi tìm kiếm quán cà phê: ${err.message}`);
+      setCafes([]);
+      setAllCafes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchKeyword, currentLocation, sort, filters, messageApi]);
+
+  // Listen for review submission to refresh cafe list
+  useEffect(() => {
+    const handleReviewSubmitted = async (event) => {
+      // Refresh cafe list khi có review mới được submit
+      console.log('Review submitted, refreshing cafe list...', event.detail);
+      if (mode === 'nearby' && currentLocation) {
+        await handleLocateMe(sort);
+        messageApi.success('Đã cập nhật rating của quán!');
+      } else if (mode === 'search' && searchKeyword.trim()) {
+        await handleSearch(searchKeyword);
+        messageApi.success('Đã cập nhật rating của quán!');
+      }
+    };
+
+    window.addEventListener('reviewSubmitted', handleReviewSubmitted);
+    return () => {
+      window.removeEventListener('reviewSubmitted', handleReviewSubmitted);
+    };
+  }, [mode, currentLocation, searchKeyword, sort, messageApi, handleLocateMe, handleSearch]);
+
+  // Chỉ set center mặc định cho map, KHÔNG auto load cafes
+  useEffect(() => {
+    // Set center mặc định là Hà Nội để map có vị trí hiển thị
+    // Không tự động load cafes - chỉ load khi user tương tác
+    setCenter({ lat: 21.028511, lng: 105.804817 });
+    
+    // Không tự động lấy GPS location - chỉ lấy khi user click "Vị trí của tôi"
+    // Không tự động load cafes - chỉ load khi user search hoặc click "Vị trí của tôi"
+  }, []); // Chỉ chạy 1 lần khi mount
+
+  // Khi user gõ trong ô search
+  const handleKeywordChange = (value) => {
+    setSearchKeyword(value);
+    // Không tự động load khi xóa search keyword
+    // User phải click "Vị trí của tôi" hoặc search lại
   };
 
   const handleSelectCafe = (cafe) => {
@@ -427,28 +340,6 @@ function Home() {
   const handleCloseDirectionsModal = () => {
     setDirectionsModalVisible(false);
     setSelectedCafeForDirections(null);
-  };
-
-  const handleFilterChange = (newFilters) => {
-    console.log('Filter changed:', newFilters);
-    console.log('All cafes before filter:', allCafes.length, allCafes.map(c => ({ name: c.name, distance: c.distance })));
-    setFilters(newFilters);
-    // Apply filters to all cafes
-    if (allCafes.length > 0) {
-      const filtered = applyFilters(allCafes, newFilters);
-      console.log('Cafes after filter:', filtered.length, filtered.map(c => ({ name: c.name, distance: c.distance })));
-      setCafes(filtered);
-      // Reset to page 1 when filter changes
-      setCurrentPage(1);
-      // Update center to first filtered cafe if available
-      if (filtered.length > 0 && currentLocation) {
-        // Keep current center, don't change it when filtering
-      }
-    } else {
-      console.warn('No cafes to filter! allCafes is empty');
-      setCafes([]);
-      setCurrentPage(1);
-    }
   };
 
   const handleSaveFavorite = async (cafe) => {
@@ -514,14 +405,14 @@ function Home() {
           <div className="app-header-left-new">
             <div className="app-logo-new">
               <span className="coffee-icon">☕</span>
-              <span className="app-logo-text">カフェナン</span>
+              <span className="app-logo-text">{t('home.title')}</span>
             </div>
             <div className="app-search-bar-new">
               <SearchOutlined className="search-icon" />
               <input
                 type="text"
                 className="header-search-input"
-                placeholder="新話カフェ"
+                placeholder={t('home.searchPlaceholder')}
                 value={searchKeyword}
                 onChange={(e) => handleKeywordChange(e.target.value)}
                 onKeyPress={(e) => {
@@ -537,13 +428,20 @@ function Home() {
               className="nav-link"
               onClick={() => handleLocateMe()}
             >
-              現在地から探る
+              {t('home.locateMe')}
             </button>
             <button 
               className="nav-link"
               onClick={handleGoToFavorites}
             >
-              <HeartOutlined /> おへわり
+              <HeartOutlined /> {t('home.favorites')}
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => navigate('/admin')}
+              title="Admin Dashboard"
+            >
+              <SettingOutlined /> Admin
             </button>
             <div 
               className="nav-link nav-link-avatar"
@@ -560,7 +458,7 @@ function Home() {
               className="nav-link nav-link-logout"
               onClick={handleLogout}
             >
-              <LogoutOutlined /> ログアウト
+              <LogoutOutlined /> {t('home.logout')}
             </button>
           </nav>
         </div>
@@ -569,9 +467,11 @@ function Home() {
       <main className="app-layout-new">
         <section className="app-sidebar-new">
           <div className="cafe-list-panel">
-            <h2 className="cafe-list-title">カフェ一覧</h2>
+            <h2 className="cafe-list-title">{t('home.cafeList')}</h2>
             <div className="cafe-cards-container">
-              {currentCafes.length > 0 ? (
+              {loading ? (
+                <div className="cafe-empty">{t('common.loading')}</div>
+              ) : currentCafes.length > 0 ? (
                 currentCafes.map((cafe) => (
                   <div
                     key={`${cafe.provider}:${cafe.provider_place_id}`}
@@ -612,6 +512,9 @@ function Home() {
                               {'☆'.repeat(5 - Math.ceil(cafe.user_rating))}
                             </span>
                             <span className="cafe-rating-number">{cafe.user_rating.toFixed(1)}</span>
+                            {cafe.review_count > 0 && (
+                              <span className="cafe-review-count">({cafe.review_count} {t('home.reviews')})</span>
+                            )}
                           </>
                         ) : (
                           <>
@@ -622,7 +525,7 @@ function Home() {
                         <span className="cafe-distance-text">
                           {cafe.distance !== null && cafe.distance !== undefined 
                             ? `${cafe.distance.toFixed(1)} km` 
-                            : '距離不明'}
+                            : t('home.distanceUnknown')}
                         </span>
                       </div>
                       <p className="cafe-address-text">{cafe.address || '新昕総 倦涉万'}</p>
@@ -631,7 +534,7 @@ function Home() {
                           type="button"
                           className="cafe-directions-btn-image"
                           onClick={(e) => handleOpenDirections(e, cafe)}
-                          title="Chỉ đường"
+                          title={t('home.directions')}
                         >
                           <EnvironmentOutlined />
                         </button>
@@ -650,7 +553,7 @@ function Home() {
                               });
                             }
                           }}
-                          title="Đánh giá quán"
+                          title={t('home.reviews')}
                         >
                           <StarOutlined />
                         </button>
@@ -658,8 +561,16 @@ function Home() {
                     </div>
                   </div>
                 ))
+              ) : allCafes.length === 0 ? (
+                <div className="cafe-empty">
+                  <p>{t('home.noCafes')}</p>
+                  <ul style={{ textAlign: 'left', marginTop: '12px', paddingLeft: '20px' }}>
+                    <li>{t('home.noCafesHint1')}</li>
+                    <li>{t('home.noCafesHint2')}</li>
+                  </ul>
+                </div>
               ) : (
-                <div className="cafe-empty">Không có quán nào phù hợp.</div>
+                <div className="cafe-empty">{t('home.noFilteredCafes')}</div>
               )}
             </div>
             {totalPages > 0 && (
@@ -667,8 +578,8 @@ function Home() {
                 <div className="pagination-info">
                   <span>
                     {cafes.length > 0 
-                      ? `ページ ${currentPage} / ${totalPages} (全 ${cafes.length} 件)`
-                      : 'カフェが見つかりません'
+                      ? `${t('home.page')} ${currentPage} ${t('home.of')} ${totalPages} (${t('home.total')} ${cafes.length} ${t('home.items')})`
+                      : t('home.noCafesNearby')
                     }
                   </span>
                 </div>
@@ -679,7 +590,7 @@ function Home() {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
-                      前へ
+                      {t('common.previous')}
                     </button>
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                       let pageNum;
@@ -707,7 +618,7 @@ function Home() {
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage >= totalPages}
                     >
-                      次へ
+                      {t('common.next')}
                     </button>
                   </div>
                 )}
@@ -718,7 +629,7 @@ function Home() {
 
         <section className="map-panel-new">
           <div className="map-header-new">
-            <h2 className="map-title-new">地図表示</h2>
+            <h2 className="map-title-new">{t('home.mapDisplay')}</h2>
             <div className="map-controls">
               <label className="map-checkbox-label">
                 <input
@@ -726,7 +637,7 @@ function Home() {
                   checked={showCafesOnMap}
                   onChange={(e) => setShowCafesOnMap(e.target.checked)}
                 />
-                <span>地図上のカフェ</span>
+                <span>{t('home.showCafesOnMap')}</span>
               </label>
             </div>
           </div>
@@ -746,6 +657,25 @@ function Home() {
         onCancel={handleCloseDirectionsModal}
         cafe={selectedCafeForDirections}
         currentLocation={currentLocation}
+      />
+
+      {/* Promotion Notifications */}
+      <PromotionNotification
+        currentLocation={currentLocation}
+        onPromotionClick={(promotion) => {
+          // Tìm cafe tương ứng và center vào đó
+          const cafe = cafes.find(
+            (c) => c.id === promotion.cafe_id ||
+            (c.provider && c.provider_place_id && 
+             `${c.provider}_${c.provider_place_id}` === `${promotion.cafe_id}`)
+          );
+          if (cafe) {
+            setCenter({ lat: cafe.lat, lng: cafe.lng });
+            handleSelectCafe(cafe);
+          } else if (promotion.cafe_lat && promotion.cafe_lng) {
+            setCenter({ lat: promotion.cafe_lat, lng: promotion.cafe_lng });
+          }
+        }}
       />
     </>
   );

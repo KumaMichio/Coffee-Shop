@@ -3,15 +3,17 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import authService from '../services/authService';
+import { useTranslation } from '../hooks/useTranslation';
 
 const RegisterForm = ({ onSuccess, onSwitchToLogin }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
       await authService.register(values.username, values.email, values.password);
-      message.success('新規登録に成功しました！');
+      message.success(t('auth.registerSuccess'));
       if (onSuccess) onSuccess();
     } catch (error) {
       message.error(error.message);
@@ -28,70 +30,70 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }) => {
       layout="vertical"
     >
       <Form.Item
-        label="ユーザー名"
+        label={t('auth.username')}
         name="username"
         rules={[
-          { required: true, message: 'ユーザー名を入力してください！' },
-          { min: 3, message: 'ユーザー名は3文字以上である必要があります！' },
-          { max: 50, message: 'ユーザー名は50文字以内である必要があります！' },
+          { required: true, message: t('auth.usernameRequired') },
+          { min: 3, message: t('auth.usernameMinLength') },
+          { max: 50, message: 'Username must be 50 characters or less!' },
         ]}
       >
         <Input 
           prefix={<UserOutlined />} 
-          placeholder="ユーザー名" 
+          placeholder={t('auth.username')} 
           size="large"
         />
       </Form.Item>
 
       <Form.Item
-        label="メールアドレス"
+        label={t('auth.email')}
         name="email"
         rules={[
-          { required: true, message: 'メールアドレスを入力してください！' },
-          { type: 'email', message: 'メールアドレスの形式が正しくありません！' },
+          { required: true, message: t('auth.emailRequired') },
+          { type: 'email', message: t('auth.emailInvalid') },
         ]}
       >
         <Input 
           prefix={<MailOutlined />} 
-          placeholder="メールアドレス" 
+          placeholder={t('auth.email')} 
           size="large"
         />
       </Form.Item>
 
       <Form.Item
-        label="パスワード"
+        label={t('auth.password')}
         name="password"
         rules={[
-          { required: true, message: 'パスワードを入力してください！' },
-          { min: 6, message: 'パスワードは6文字以上である必要があります！' },
+          { required: true, message: t('auth.passwordRequired') },
+          { min: 6, message: t('auth.passwordMinLength') },
         ]}
       >
         <Input.Password
           prefix={<LockOutlined />}
-          placeholder="パスワード"
+          placeholder={t('auth.password')}
           size="large"
         />
       </Form.Item>
 
       <Form.Item
-        label="パスワード確認"
+        label={t('auth.confirmPassword')}
         name="confirmPassword"
         dependencies={['password']}
         rules={[
-          { required: true, message: 'パスワードを確認してください！' },
+          { required: true, message: 'Please confirm your password!' },
           ({ getFieldValue }) => ({
             validator(_, value) {
               if (!value || getFieldValue('password') === value) {
                 return Promise.resolve();
               }
-              return Promise.reject(new Error('パスワードが一致しません！'));
+              return Promise.reject(new Error('Passwords do not match!'));
             },
           }),
         ]}
       >
         <Input.Password
           prefix={<LockOutlined />}
-          placeholder="パスワード確認"
+          placeholder={t('auth.confirmPassword')}
           size="large"
         />
       </Form.Item>
@@ -104,14 +106,14 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin }) => {
           block 
           size="large"
         >
-          新規登録
+          {t('auth.register')}
         </Button>
       </Form.Item>
 
       <div style={{ textAlign: 'center' }}>
-        すでにアカウントをお持ちの方は{' '}
+        {t('auth.haveAccount')}{' '}
         <Button type="link" onClick={onSwitchToLogin}>
-          ログイン
+          {t('auth.login')}
         </Button>
       </div>
     </Form>

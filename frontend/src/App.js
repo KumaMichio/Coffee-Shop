@@ -1,11 +1,13 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from './contexts/LanguageContext';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Favorites from './pages/Favorites';
 import Review from './pages/Review';
 import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 import authService from './services/authService';
 import './App.css';
 
@@ -17,9 +19,10 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <div className="app-root">
-        <Routes>
+    <LanguageProvider>
+      <Router>
+        <div className="app-root">
+          <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route 
             path="/" 
@@ -53,9 +56,18 @@ function App() {
               </ProtectedRoute>
             } 
           />
-        </Routes>
-      </div>
-    </Router>
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } 
+          />
+          </Routes>
+        </div>
+      </Router>
+    </LanguageProvider>
   );
 }
 

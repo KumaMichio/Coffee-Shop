@@ -3,7 +3,6 @@ const express = require('express');
 const { goong } = require('../config');
 
 const router = express.Router();
-const GOONG_REST_API_KEY = process.env.GOONG_API_KEY;
 
 /**
  * GET /api/map/current-location
@@ -15,15 +14,15 @@ router.get('/current-location', async (req, res) => {
     const address =
       req.query.address || 'Hồ Gươm, Hoàn Kiếm, Hà Nội';
 
-    if (!GOONG_REST_API_KEY) {
+    if (!goong.restApiKey) {
       return res
         .status(500)
-        .json({ message: 'GOONG_REST_API_KEY is missing' });
+        .json({ message: 'GOONG_API_KEY is missing' });
     }
 
     const url = `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(
       address
-    )}&api_key=${GOONG_REST_API_KEY}`;
+    )}&api_key=${goong.restApiKey}`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -63,15 +62,15 @@ router.get('/geocode', async (req, res) => {
       return res.status(400).json({ message: 'address is required' });
     }
 
-    if (!GOONG_REST_API_KEY) {
+    if (!goong.restApiKey) {
       return res
         .status(500)
-        .json({ message: 'GOONG_REST_API_KEY is missing' });
+        .json({ message: 'GOONG_API_KEY is missing' });
     }
 
     const url = `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(
       address
-    )}&api_key=${GOONG_REST_API_KEY}`;
+    )}&api_key=${goong.restApiKey}`;
 
     const response = await fetch(url);
     if (!response.ok) {

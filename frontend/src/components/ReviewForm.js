@@ -95,15 +95,26 @@ function ReviewForm({ cafe, onSuccess, onCancel }) {
 
       <div className="review-form-content">
         <div className="review-form-section">
-          <label className="review-form-label">評而</label>
+          <label className="review-form-label">
+            <StarOutlined style={{ marginRight: 8, color: '#fbbf24' }} />
+            評価 (1-5星)
+          </label>
           <div className="review-rating-section">
             <Rate
               value={rating}
               onChange={setRating}
               allowClear={false}
-              style={{ fontSize: 28 }}
+              style={{ fontSize: 32 }}
+              character={<StarOutlined />}
             />
-            <p className="review-rating-hint">タップして評用</p>
+            {rating > 0 && (
+              <p className="review-rating-selected">
+                選択: {rating} {rating === 1 ? '星' : '星'}
+              </p>
+            )}
+            {rating === 0 && (
+              <p className="review-rating-hint">タップして評価を選択してください</p>
+            )}
           </div>
         </div>
 

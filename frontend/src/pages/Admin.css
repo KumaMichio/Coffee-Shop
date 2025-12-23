@@ -1,0 +1,85 @@
+/* frontend/src/pages/Admin.css */
+.admin-page {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.admin-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.admin-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coffee-icon {
+  font-size: 28px;
+}
+
+.admin-header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-nav-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s;
+}
+
+.admin-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.admin-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.admin-main .ant-card {
+  margin-bottom: 24px;
+}
+
+.admin-main .ant-statistic-title {
+  color: #666;
+  font-size: 14px;
+}
+
+.admin-main .ant-statistic-content {
+  color: #1890ff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
