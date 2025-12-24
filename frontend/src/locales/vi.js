@@ -24,6 +24,7 @@ export default {
     settings: 'Cài đặt',
     profile: 'Hồ sơ',
     favorites: 'Yêu thích',
+    home: 'Trang chủ',
     reviews: 'Đánh giá',
     cafes: 'Quán cà phê',
     distance: 'Khoảng cách',
@@ -87,7 +88,9 @@ export default {
     emptySearch: 'Vui lòng nhập từ khóa tìm kiếm',
     searchError: 'Lỗi tìm kiếm',
     locationError: 'Không thể lấy vị trí',
-    noCafesNearby: 'Không tìm thấy quán cà phê nào gần đây'
+    noCafesNearby: 'Không tìm thấy quán cà phê nào gần đây',
+    scrollForMore: 'Cuộn xuống để xem thêm',
+    allCafesLoaded: 'Đã tải tất cả quán'
   },
 
   // Profile
@@ -117,7 +120,17 @@ export default {
     selectLanguage: 'Chọn ngôn ngữ',
     japanese: '日本語',
     vietnamese: 'Tiếng Việt',
-    english: 'English'
+    english: 'English',
+    avatarHint: 'Nhấn để thay đổi ảnh đại diện (tối đa 5MB)',
+    joinDate: 'Ngày tham gia',
+    contributionHistory: 'Lịch sử đóng góp',
+    changePasswordButton: 'Đổi mật khẩu',
+    passwordPlaceholder: 'Nhập mật khẩu',
+    confirmPasswordPlaceholder: 'Nhập lại mật khẩu',
+    photos: 'Ảnh',
+    noPhotos: 'Chưa có ảnh nào',
+    previous: 'Trước',
+    next: 'Sau'
   },
 
   // Review
@@ -171,7 +184,27 @@ export default {
     freeItem: 'Tặng',
     time: 'Thời gian',
     cafe: 'Quán',
-    description: 'Mô tả'
+    description: 'Mô tả',
+    title: 'Khuyến mãi',
+    noPromotions: 'Không có khuyến mãi nào đang diễn ra',
+    special: 'Khuyến mãi đặc biệt',
+    remainingTime: 'Còn',
+    daysRemaining: 'ngày',
+    hoursRemaining: 'giờ',
+    soonExpired: 'Sắp hết hạn',
+    expired: 'Đã hết hạn'
+  },
+
+  // Admin
+  admin: {
+    title: 'Bảng điều khiển Admin',
+    totalUsers: 'Tổng số người dùng',
+    totalReviews: 'Tổng số đánh giá',
+    activePromotions: 'Khuyến mãi đang hoạt động',
+    totalCafes: 'Tổng số quán cà phê',
+    promotions: 'Khuyến mãi',
+    reviews: 'Đánh giá',
+    users: 'Người dùng'
   },
 
   // Directions

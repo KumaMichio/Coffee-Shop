@@ -3,13 +3,14 @@ const express = require('express');
 const userRepository = require('../repositories/userRepository');
 const reviewRepository = require('../repositories/reviewRepository');
 const promotionRepository = require('../repositories/promotionRepository');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const db = require('../db');
 
 const router = express.Router();
 
-// Tất cả routes đều cần authentication
+// Tất cả routes đều cần authentication và quyền admin
 router.use(authenticateToken);
+router.use(requireAdmin);
 
 // GET /api/admin/users - Lấy danh sách tất cả users
 router.get('/users', async (req, res) => {

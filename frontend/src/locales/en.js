@@ -24,6 +24,7 @@ export default {
     settings: 'Settings',
     profile: 'Profile',
     favorites: 'Favorites',
+    home: 'Home',
     reviews: 'Reviews',
     cafes: 'Cafes',
     distance: 'Distance',
@@ -87,7 +88,9 @@ export default {
     emptySearch: 'Please enter a search keyword',
     searchError: 'Search error',
     locationError: 'Unable to get location',
-    noCafesNearby: 'No cafes found nearby'
+    noCafesNearby: 'No cafes found nearby',
+    scrollForMore: 'Scroll down for more',
+    allCafesLoaded: 'All cafes loaded'
   },
 
   // Profile
@@ -117,7 +120,17 @@ export default {
     selectLanguage: 'Select Language',
     japanese: '日本語',
     vietnamese: 'Tiếng Việt',
-    english: 'English'
+    english: 'English',
+    avatarHint: 'Click to change avatar (max 5MB)',
+    joinDate: 'Join Date',
+    contributionHistory: 'Contribution History',
+    changePasswordButton: 'Change Password',
+    passwordPlaceholder: 'Enter password',
+    confirmPasswordPlaceholder: 'Re-enter password',
+    photos: 'Photos',
+    noPhotos: 'No photos yet',
+    previous: 'Previous',
+    next: 'Next'
   },
 
   // Review
@@ -171,7 +184,27 @@ export default {
     freeItem: 'Free',
     time: 'Time',
     cafe: 'Cafe',
-    description: 'Description'
+    description: 'Description',
+    title: 'Promotions',
+    noPromotions: 'No active promotions',
+    special: 'Special Promotion',
+    remainingTime: 'Remaining',
+    daysRemaining: 'days',
+    hoursRemaining: 'hours',
+    soonExpired: 'Expiring soon',
+    expired: 'Expired'
+  },
+
+  // Admin
+  admin: {
+    title: 'Admin Dashboard',
+    totalUsers: 'Total Users',
+    totalReviews: 'Total Reviews',
+    activePromotions: 'Active Promotions',
+    totalCafes: 'Total Cafes',
+    promotions: 'Promotions',
+    reviews: 'Reviews',
+    users: 'Users'
   },
 
   // Directions

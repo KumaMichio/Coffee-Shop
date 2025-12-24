@@ -17,6 +17,22 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/auth" />;
 };
 
+// Admin Route Component - chỉ cho phép admin truy cập
+const AdminRoute = ({ children }) => {
+  const isAuthenticated = authService.isAuthenticated();
+  const isAdmin = authService.isAdmin();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" />;
+  }
+  
+  if (!isAdmin) {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+};
+
 function App() {
   return (
     <LanguageProvider>
@@ -59,9 +75,9 @@ function App() {
           <Route 
             path="/admin" 
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <Admin />
-              </ProtectedRoute>
+              </AdminRoute>
             } 
           />
           </Routes>

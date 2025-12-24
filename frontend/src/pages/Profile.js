@@ -18,7 +18,7 @@ import './Profile.css';
 
 function Profile() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [user, setUser] = useState(null);
@@ -139,7 +139,14 @@ function Profile() {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
+    // Map language code to locale
+    const localeMap = {
+      'ja': 'ja-JP',
+      'vi': 'vi-VN',
+      'en': 'en-US'
+    };
+    const locale = localeMap[language] || 'ja-JP';
+    return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -162,27 +169,27 @@ function Profile() {
           <div className="profile-header-left">
             <div className="profile-logo">
               <span className="coffee-icon">☕</span>
-              <span className="profile-logo-text">カフェナブ</span>
+              <span className="profile-logo-text">{t('home.title')}</span>
             </div>
             <div className="profile-search-bar">
               <SearchOutlined className="search-icon" />
               <input
                 type="text"
                 className="header-search-input"
-                placeholder="Each"
+                placeholder={t('home.searchPlaceholder')}
               />
               <button className="search-btn">오</button>
             </div>
           </div>
           <nav className="profile-header-nav">
             <button className="nav-link" onClick={() => navigate('/')}>
-              <HomeOutlined /> ホーム
+              <HomeOutlined /> {t('common.home')}
             </button>
             <button className="nav-link" onClick={() => navigate('/favorites')}>
-              <HeartOutlined /> お外れり
+              <HeartOutlined /> {t('common.favorites')}
             </button>
             <button className="nav-link active">
-              <UserOutlined /> プロモール
+              <UserOutlined /> {t('common.profile')}
             </button>
             <button className="nav-link">
               <SettingOutlined />
@@ -195,7 +202,7 @@ function Profile() {
         {/* Left Section - Profile Info */}
         <div className="profile-left">
           <Card className="profile-card">
-            <h2 className="profile-title">プロモール</h2>
+            <h2 className="profile-title">{t('profile.title')}</h2>
             
             <div className="profile-avatar-section">
               <Upload
@@ -227,13 +234,13 @@ function Profile() {
                 </div>
               </Upload>
               {editing && (
-                <p className="profile-avatar-hint">クリックしてアバターを変更 (最大5MB)</p>
+                <p className="profile-avatar-hint">{t('profile.avatarHint')}</p>
               )}
             </div>
 
             <div className="profile-form">
               <div className="profile-form-group">
-                <label className="profile-label">ゲーボー各</label>
+                <label className="profile-label">{t('profile.username')}</label>
                 <Input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -249,7 +256,7 @@ function Profile() {
                   onClick={handleEditProfile}
                   className="profile-edit-btn"
                 >
-                  プロモールを編集
+                  {t('profile.editProfile')}
                 </Button>
               )}
 
@@ -260,12 +267,12 @@ function Profile() {
                   onClick={() => setEditing(true)}
                   className="profile-edit-btn"
                 >
-                  プロモールを編集
+                  {t('profile.editProfile')}
                 </Button>
               )}
 
               <div className="profile-form-group">
-                <label className="profile-label">メールアリレス:</label>
+                <label className="profile-label">{t('profile.email')}:</label>
                 <Input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -275,7 +282,7 @@ function Profile() {
               </div>
 
               <div className="profile-form-group">
-                <label className="profile-label">パツサース:</label>
+                <label className="profile-label">{t('common.password')}:</label>
                 <Input.Password
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -288,30 +295,30 @@ function Profile() {
               {editing && (
                 <div className="profile-password-section">
                   <div className="profile-form-group">
-                    <label className="profile-label">現在のパスワード:</label>
+                    <label className="profile-label">{t('profile.currentPassword')}:</label>
                     <Input.Password
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       className="profile-input"
-                      placeholder="現在のパスワードを入力"
+                      placeholder={t('profile.passwordPlaceholder')}
                     />
                   </div>
                   <div className="profile-form-group">
-                    <label className="profile-label">新しいパスワード:</label>
+                    <label className="profile-label">{t('profile.newPassword')}:</label>
                     <Input.Password
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="profile-input"
-                      placeholder="新しいパスワードを入力"
+                      placeholder={t('profile.passwordPlaceholder')}
                     />
                   </div>
                   <div className="profile-form-group">
-                    <label className="profile-label">パスワード確認:</label>
+                    <label className="profile-label">{t('profile.confirmPassword')}:</label>
                     <Input.Password
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="profile-input"
-                      placeholder="パスワードを再入力"
+                      placeholder={t('profile.confirmPasswordPlaceholder')}
                     />
                   </div>
                   <Button
@@ -319,13 +326,13 @@ function Profile() {
                     onClick={handleChangePassword}
                     className="profile-change-password-btn"
                   >
-                    パスワードを変更
+                    {t('profile.changePasswordButton')}
                   </Button>
                 </div>
               )}
 
               <div className="profile-form-group">
-                <label className="profile-label">咒紹日:</label>
+                <label className="profile-label">{t('profile.joinDate')}:</label>
                 <Input
                   value={formatDate(user?.created_at)}
                   disabled
@@ -339,7 +346,7 @@ function Profile() {
         {/* Right Section - Contribution History */}
         <div className="profile-right">
           <Card className="contribution-card">
-            <h2 className="contribution-title">奇谱质层</h2>
+            <h2 className="contribution-title">{t('profile.contributionHistory')}</h2>
             
             <Tabs 
               activeKey={activeTab} 
@@ -347,7 +354,7 @@ function Profile() {
               items={[
                 {
                   key: 'reviews',
-                  label: `レビュー (${totalReviews})`,
+                  label: `${t('profile.myReviews')} (${totalReviews})`,
                   children: (
                     <>
                       <div className="reviews-list">
@@ -358,7 +365,7 @@ function Profile() {
                                 <span className="review-thumbnail-icon">☕</span>
                               </div>
                               <div className="review-content">
-                                <h3 className="review-cafe-name">{review.cafe_name || 'カフェ名'}</h3>
+                                <h3 className="review-cafe-name">{review.cafe_name || t('common.cafes')}</h3>
                                 <div className="review-rating">
                                   {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                                 </div>
@@ -375,7 +382,7 @@ function Profile() {
                             </div>
                           ))
                         ) : (
-                          <div className="empty-reviews">レビューがありません</div>
+                          <div className="empty-reviews">{t('profile.noReviews')}</div>
                         )}
                       </div>
 
@@ -386,7 +393,7 @@ function Profile() {
                             onClick={() => setCurrentPage(currentPage - 1)}
                             disabled={currentPage === 1}
                           >
-                            前っ
+                            {t('profile.previous')}
                           </button>
                           {Array.from({ length: Math.ceil(totalReviews / 10) }, (_, i) => i + 1)
                             .slice(0, 3)
@@ -404,7 +411,7 @@ function Profile() {
                             onClick={() => setCurrentPage(currentPage + 1)}
                             disabled={currentPage >= Math.ceil(totalReviews / 10)}
                           >
-                            次へ
+                            {t('profile.next')}
                           </button>
                         </div>
                       )}
@@ -413,10 +420,10 @@ function Profile() {
                 },
                 {
                   key: 'photos',
-                  label: '手真',
+                  label: t('profile.photos'),
                   children: (
                     <div className="photos-list">
-                      <div className="empty-photos">写真がありません</div>
+                      <div className="empty-photos">{t('profile.noPhotos')}</div>
                     </div>
                   )
                 },

@@ -36,4 +36,19 @@ function authenticateToken(req, res, next) {
   }
 }
 
-module.exports = { authenticateToken };
+// Middleware kiểm tra quyền admin
+function requireAdmin(req, res, next) {
+  // authenticateToken phải được gọi trước để có req.user
+  if (!req.user) {
+    return res.status(401).json({ error: 'Chưa đăng nhập' });
+  }
+
+  // Kiểm tra role trong JWT token
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Không có quyền truy cập' });
+  }
+
+  return next();
+}
+
+module.exports = { authenticateToken, requireAdmin };

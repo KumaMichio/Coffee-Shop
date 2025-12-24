@@ -121,10 +121,11 @@ router.get('/search', async (req, res) => {
     const centerLat = lat ?? 21.028511;
     const centerLng = lng ?? 105.804817;
 
+    // Khi search, dùng radius lớn (50km) để lấy tất cả kết quả, không filter theo khoảng cách
     const cafes = await searchCafesFromProviders({
       lat: centerLat,
       lng: centerLng,
-      radius: 3000,
+      radius: 50000, // 50km - giới hạn tối đa của Google Places API
       keyword: query
     });
 
@@ -140,14 +141,15 @@ router.get('/search', async (req, res) => {
 });
 
 // GET /api/cafes/favorites
+// Lưu ý: Endpoint này trả về tất cả cafes (không filter theo favorites)
+// Để lấy favorites của user, sử dụng /api/favorites thay thế
 router.get('/favorites', async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, provider, provider_place_id, name, address,
-              lat, lng, rating, user_rating_count, is_favorite,
-              created_at
+              lat, lng, rating, user_rating_count, created_at
        FROM cafes
-       WHERE is_favorite = TRUE
+       WHERE lat IS NOT NULL AND lng IS NOT NULL
        ORDER BY created_at DESC`
     );
     const cafes = result.rows;
@@ -210,16 +212,20 @@ router.post('/favorites', async (req, res) => {
   }
 });
 
-// (Tuỳ: GET /api/cafes -> trả favorites, dùng cho backward compatibility)
+// GET /api/cafes -> Lấy tất cả cafes từ database (dùng để hiển thị trên map)
 router.get('/', async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, provider, provider_place_id, name, address,
-              lat, lng, rating, user_rating_count, is_favorite
+              lat, lng, rating, user_rating_count
        FROM cafes
+       WHERE lat IS NOT NULL AND lng IS NOT NULL
        ORDER BY created_at DESC`
     );
-    res.json(result.rows);
+    const cafes = result.rows;
+    // Lấy ratings từ reviews
+    const cafesWithRatings = await getCafesWithRatings(cafes);
+    res.json(cafesWithRatings);
   } catch (err) {
     console.error('Error in GET /api/cafes', err);
     res.status(500).json({ message: 'Internal server error' });

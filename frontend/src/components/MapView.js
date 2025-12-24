@@ -399,16 +399,32 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
 
   // markers quán cà phê
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current) {
+      console.log('MapView: mapRef.current is null, skipping marker update');
+      return;
+    }
 
     console.log('MapView: cafes changed, count:', cafes.length);
+    if (cafes.length > 0) {
+      console.log('MapView: Sample cafe:', {
+        name: cafes[0].name,
+        lat: cafes[0].lat,
+        lng: cafes[0].lng,
+        typeLat: typeof cafes[0].lat,
+        typeLng: typeof cafes[0].lng
+      });
+    }
 
     // Wait for map to be ready before adding markers
     const addMarkers = () => {
-      if (!mapRef.current) return;
+      if (!mapRef.current) {
+        console.log('MapView: mapRef.current is null in addMarkers');
+        return;
+      }
 
       // Check if map is ready
       if (!mapReadyRef.current) {
+        console.log('MapView: Map not ready yet, retrying in 100ms');
         setTimeout(addMarkers, 100);
         return;
       }
@@ -430,8 +446,29 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
 
         // Add markers for each cafe
         cafes.forEach((cafe, index) => {
-          if (!cafe || typeof cafe.lat !== 'number' || typeof cafe.lng !== 'number') {
-            console.warn('MapView: Invalid cafe data at index', index, cafe);
+          if (!cafe) {
+            console.warn('MapView: Null/undefined cafe at index', index);
+            return;
+          }
+          
+          if (typeof cafe.lat !== 'number' || typeof cafe.lng !== 'number' || isNaN(cafe.lat) || isNaN(cafe.lng)) {
+            console.warn('MapView: Invalid cafe coordinates at index', index, {
+              name: cafe.name,
+              lat: cafe.lat,
+              lng: cafe.lng,
+              typeLat: typeof cafe.lat,
+              typeLng: typeof cafe.lng
+            });
+            return;
+          }
+          
+          // Validate lat/lng range
+          if (cafe.lat < -90 || cafe.lat > 90 || cafe.lng < -180 || cafe.lng > 180) {
+            console.warn('MapView: Cafe coordinates out of range at index', index, {
+              name: cafe.name,
+              lat: cafe.lat,
+              lng: cafe.lng
+            });
             return;
           }
 
@@ -526,10 +563,13 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
             }
 
             markersRef.current.push(marker);
+            console.log('MapView: Successfully added marker for:', cafe.name, 'at', [cafe.lng, cafe.lat]);
           } catch (err) {
             console.error('Error creating marker for cafe:', cafe.name, err);
           }
         });
+        
+        console.log('MapView: Total markers added:', markersRef.current.length);
       } catch (err) {
         console.error('Error adding markers:', err);
       }
@@ -577,6 +617,15 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
         // tạo HTML element custom cho marker
         const el = document.createElement('div');
         el.className = 'current-location-marker';
+        
+        // Style cho marker vị trí hiện tại
+        el.style.width = '20px';
+        el.style.height = '20px';
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = '#4285F4';
+        el.style.border = '3px solid white';
+        el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        el.style.cursor = 'pointer';
         
         // Thêm animation khi marker xuất hiện
         el.style.animation = 'pulse 2s infinite';

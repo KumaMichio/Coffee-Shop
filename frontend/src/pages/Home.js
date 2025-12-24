@@ -1,7 +1,8 @@
 // src/pages/Home.js
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { message, Avatar } from 'antd';
-import { LogoutOutlined, HeartOutlined, EnvironmentOutlined, SearchOutlined, UserOutlined, StarOutlined, SettingOutlined } from '@ant-design/icons';
+import { LogoutOutlined, HeartOutlined, EnvironmentOutlined, SearchOutlined, UserOutlined, StarOutlined, SettingOutlined, BellOutlined, GiftOutlined } from '@ant-design/icons';
+import LanguageDropdown from '../components/LanguageDropdown';
 import { useNavigate } from 'react-router-dom';
 import MapView from '../components/MapView';
 import DirectionsModal from '../components/DirectionsModal';
@@ -9,6 +10,7 @@ import PromotionNotification from '../components/PromotionNotification';
 import apiService from '../services/apiService';
 import authService from '../services/authService';
 import profileService from '../services/profileService';
+import promotionService from '../services/promotionService';
 import { useTranslation } from '../hooks/useTranslation';
 
 
@@ -33,12 +35,18 @@ function Home() {
   });
   const [allCafes, setAllCafes] = useState([]); // Lưu tất cả quán trước khi filter
   const [shouldZoomToLocation, setShouldZoomToLocation] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(3);
+  const [displayedCafesCount, setDisplayedCafesCount] = useState(3); // Số lượng cafes hiển thị ban đầu
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const sentinelRef = useRef(null);
+  const isLocatingRef = useRef(false); // Ref để track xem đang trong quá trình locate không
   const [showCafesOnMap, setShowCafesOnMap] = useState(true);
   const [directionsModalVisible, setDirectionsModalVisible] = useState(false);
   const [selectedCafeForDirections, setSelectedCafeForDirections] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
+  const [databaseCafes, setDatabaseCafes] = useState([]); // Cafes từ database
+  const [showPromotionsList, setShowPromotionsList] = useState(false); // Hiển thị danh sách promotions
+  const [allPromotions, setAllPromotions] = useState([]); // Tất cả promotions
+  const [loadingPromotions, setLoadingPromotions] = useState(false);
 
   const handleLogout = () => {
     authService.logout();
@@ -48,6 +56,29 @@ function Home() {
 
   const handleGoToFavorites = () => {
     navigate('/favorites');
+  };
+
+  // Xử lý click vào nút thông báo khuyến mãi
+  const handleTogglePromotionsList = async () => {
+    if (!showPromotionsList) {
+      // Nếu đang ẩn, chỉ load lại nếu chưa có data hoặc refresh data
+      if (allPromotions.length === 0) {
+        setLoadingPromotions(true);
+        try {
+          const promotions = await promotionService.getAllActivePromotions();
+          setAllPromotions(promotions);
+        } catch (err) {
+          console.error('Error loading promotions:', err);
+          messageApi.error('Không thể tải danh sách khuyến mãi');
+        } finally {
+          setLoadingPromotions(false);
+        }
+      }
+      setShowPromotionsList(true);
+    } else {
+      // Nếu đang hiển thị, ẩn đi
+      setShowPromotionsList(false);
+    }
   };
 
   // Load user avatar khi component mount
@@ -67,17 +98,21 @@ function Home() {
   }, []);
 
   // Hàm áp dụng filters
-  const applyFilters = (cafes, filterOptions) => {
+  const applyFilters = (cafes, filterOptions, isSearchMode = false) => {
     let filtered = [...cafes];
 
     // Filter theo rating
     if (filterOptions.minRating) {
       const minRatingValue = parseFloat(filterOptions.minRating);
-      filtered = filtered.filter(cafe => cafe.rating && cafe.rating >= minRatingValue);
+      filtered = filtered.filter(cafe => {
+        const rating = cafe.user_rating != null ? cafe.user_rating : (cafe.rating || 0);
+        return rating >= minRatingValue;
+      });
     }
 
-    // Filter theo khoảng cách
-    if (filterOptions.maxDistance) {
+    // Filter theo khoảng cách - CHỈ áp dụng khi KHÔNG phải search mode
+    // Khi search, hiển thị tất cả kết quả không filter theo khoảng cách
+    if (!isSearchMode && filterOptions.maxDistance) {
       const maxDistanceValue = parseFloat(filterOptions.maxDistance);
       console.log('Filtering by max distance:', maxDistanceValue, 'km');
       const beforeCount = filtered.length;
@@ -112,13 +147,21 @@ function Home() {
   };
 
   // Lấy quán gần "vị trí của tôi" trong 2km
+  // Lưu ý: Không include filters trong dependency để tránh tự động trigger lại
   const handleLocateMe = useCallback(async (sortOverride) => {
+    // Đảm bảo chỉ gọi API 1 lần mỗi lần click
+    if (isLocatingRef.current || loading) {
+      console.log('Already locating, skipping duplicate request');
+      return;
+    }
+
     if (!navigator.geolocation && !currentLocation) {
       messageApi.warning('Trình duyệt của bạn không hỗ trợ GPS.');
       return;
     }
 
     try {
+      isLocatingRef.current = true; // Đánh dấu đang trong quá trình locate
       setLoading(true);
 
       let loc = currentLocation;
@@ -126,13 +169,23 @@ function Home() {
       if (!loc && navigator.geolocation) {
         try {
           loc = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
+            // Sử dụng watchPosition để lấy vị trí chính xác hơn, sau đó clear watch
+            const watchId = navigator.geolocation.watchPosition(
               (pos) => {
+                // Chỉ chấp nhận vị trí có accuracy tốt (< 100m)
+                if (pos.coords.accuracy > 100) {
+                  console.warn('Location accuracy too low:', pos.coords.accuracy, 'm, waiting for better...');
+                  return; // Tiếp tục chờ vị trí chính xác hơn
+                }
+                
+                // Clear watch sau khi có vị trí tốt
+                navigator.geolocation.clearWatch(watchId);
+                
                 const location = {
                   lat: pos.coords.latitude,
                   lng: pos.coords.longitude
                 };
-                console.log('GPS Location obtained:', {
+                console.log('GPS Location obtained (high accuracy):', {
                   lat: location.lat,
                   lng: location.lng,
                   accuracy: pos.coords.accuracy,
@@ -142,21 +195,71 @@ function Home() {
                 resolve(location);
               },
               (err) => {
+                // Clear watch khi có lỗi
+                navigator.geolocation.clearWatch(watchId);
                 console.warn('Geolocation error:', err.code, err.message);
-                // Nếu timeout hoặc lỗi, fallback về Hà Nội
-                const fallback = {
-                  lat: 21.028511,
-                  lng: 105.804817
-                };
-                console.log('Using fallback location:', fallback);
-                resolve(fallback);
+                
+                // Thử lại với getCurrentPosition nếu watchPosition thất bại
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    const location = {
+                      lat: pos.coords.latitude,
+                      lng: pos.coords.longitude
+                    };
+                    console.log('GPS Location from getCurrentPosition:', location);
+                    resolve(location);
+                  },
+                  () => {
+                    // Nếu cả hai đều thất bại, fallback về Hà Nội
+                    const fallback = {
+                      lat: 21.028511,
+                      lng: 105.804817
+                    };
+                    console.log('Using fallback location:', fallback);
+                    resolve(fallback);
+                  },
+                  { 
+                    enableHighAccuracy: true, 
+                    timeout: 5000, 
+                    maximumAge: 0
+                  }
+                );
               },
               { 
                 enableHighAccuracy: true, 
-                timeout: 10000, 
+                timeout: 15000,  // Tăng timeout lên 15s
                 maximumAge: 0  // Không sử dụng cache, luôn lấy vị trí mới
               }
             );
+            
+            // Timeout sau 15s nếu vẫn chưa có vị trí tốt
+            setTimeout(() => {
+              navigator.geolocation.clearWatch(watchId);
+              // Thử getCurrentPosition như fallback
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const location = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                  };
+                  console.log('GPS Location from timeout fallback:', location);
+                  resolve(location);
+                },
+                () => {
+                  const fallback = {
+                    lat: 21.028511,
+                    lng: 105.804817
+                  };
+                  console.log('Using fallback location after timeout:', fallback);
+                  resolve(fallback);
+                },
+                { 
+                  enableHighAccuracy: false,  // Không yêu cầu high accuracy cho fallback
+                  timeout: 5000, 
+                  maximumAge: 60000  // Chấp nhận cache 1 phút
+                }
+              );
+            }, 15000);
           });
           setCurrentLocation(loc);
           console.log('Current location set:', loc);
@@ -211,9 +314,10 @@ function Home() {
       }
 
       setAllCafes(list);
-      const filtered = applyFilters(list, filters);
+      // Apply filters ngay lập tức (không chờ useEffect)
+      const filtered = applyFilters(list, filters, false);
       setCafes(filtered);
-      setCurrentPage(1); // Reset to page 1 when loading new cafes
+      setDisplayedCafesCount(3); // Reset về 3 items ban đầu
       
       console.log('After filter:', filtered.length, 'cafes');
       if (filtered.length === 0 && list.length > 0) {
@@ -231,8 +335,10 @@ function Home() {
       messageApi.error('Không thể lấy vị trí hiện tại hoặc dữ liệu quán gần bạn.');
     } finally {
       setLoading(false);
+      isLocatingRef.current = false; // Reset flag sau khi hoàn thành
     }
-  }, [currentLocation, sort, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLocation, sort]); // Loại bỏ filters khỏi dependency để tránh tự động trigger lại
 
   // Khi user bấm Tìm kiếm
   const handleSearch = useCallback(async (keyword) => {
@@ -265,11 +371,13 @@ function Home() {
       }
       
       setAllCafes(list);
-      const filtered = applyFilters(list, filters);
+      // Khi search, không filter theo khoảng cách (isSearchMode = true)
+      // Apply filters ngay lập tức (không chờ useEffect)
+      const filtered = applyFilters(list, filters, true);
       setCafes(filtered);
-      setCurrentPage(1); // Reset to page 1 when loading new cafes
+      setDisplayedCafesCount(3); // Reset về 3 items ban đầu
       
-      console.log('After filter:', filtered.length, 'cafes');
+      console.log('After filter (search mode - no distance filter):', filtered.length, 'cafes');
       
       if (filtered.length > 0) {
         setCenter({ lat: filtered[0].lat, lng: filtered[0].lng });
@@ -287,7 +395,26 @@ function Home() {
     } finally {
       setLoading(false);
     }
-  }, [searchKeyword, currentLocation, sort, filters, messageApi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKeyword, currentLocation, sort, messageApi]); // Loại bỏ filters khỏi dependency để tránh tự động trigger lại
+
+  // Apply filters khi filters thay đổi (chỉ khi đã có allCafes)
+  // Lưu ý: Chỉ apply khi user thay đổi filters thủ công, không tự động sau search
+  useEffect(() => {
+    // Chỉ apply filters nếu đã có allCafes và không đang loading
+    if (allCafes.length > 0 && !loading) {
+      console.log('Filters changed, applying filters to existing cafes...', filters);
+      const isSearchMode = mode === 'search';
+      const filtered = applyFilters(allCafes, filters, isSearchMode);
+      setCafes(filtered);
+      setDisplayedCafesCount(3); // Reset infinite scroll to show first 3 items
+      
+      if (filtered.length === 0 && allCafes.length > 0) {
+        console.warn('All cafes filtered out! Filters:', filters);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]); // Chỉ trigger khi filters thay đổi, không phụ thuộc vào mode/search
 
   // Listen for review submission to refresh cafe list
   useEffect(() => {
@@ -307,16 +434,73 @@ function Home() {
     return () => {
       window.removeEventListener('reviewSubmitted', handleReviewSubmitted);
     };
-  }, [mode, currentLocation, searchKeyword, sort, messageApi, handleLocateMe, handleSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, currentLocation, searchKeyword, sort, messageApi]); // Loại bỏ handleLocateMe và handleSearch khỏi dependency
 
-  // Chỉ set center mặc định cho map, KHÔNG auto load cafes
+  // Load số lượng promotions khi component mount để hiển thị badge
   useEffect(() => {
-    // Set center mặc định là Hà Nội để map có vị trí hiển thị
-    // Không tự động load cafes - chỉ load khi user tương tác
-    setCenter({ lat: 21.028511, lng: 105.804817 });
+    const loadPromotionsCount = async () => {
+      try {
+        const promotions = await promotionService.getAllActivePromotions();
+        setAllPromotions(promotions);
+      } catch (err) {
+        console.error('Error loading promotions count:', err);
+        // Không hiển thị error, chỉ log
+      }
+    };
+    loadPromotionsCount();
+  }, []);
+
+  // Đóng dropdown khi click bên ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showPromotionsList && !event.target.closest('.promotions-dropdown-container')) {
+        setShowPromotionsList(false);
+      }
+    };
+
+    if (showPromotionsList) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showPromotionsList]);
+
+  // Load cafes từ database khi component mount
+  useEffect(() => {
+    const loadDatabaseCafes = async () => {
+      try {
+        const savedCafes = await apiService.getSavedCafes();
+        console.log('getSavedCafes response:', savedCafes);
+        if (Array.isArray(savedCafes)) {
+          // Filter chỉ lấy cafes có lat/lng hợp lệ
+          const validCafes = savedCafes.filter(cafe => 
+            cafe && 
+            typeof cafe.lat === 'number' && 
+            typeof cafe.lng === 'number' &&
+            !isNaN(cafe.lat) && 
+            !isNaN(cafe.lng) &&
+            cafe.lat >= -90 && cafe.lat <= 90 &&
+            cafe.lng >= -180 && cafe.lng <= 180
+          );
+          console.log('Loaded', validCafes.length, 'valid cafes from database (out of', savedCafes.length, 'total)');
+          setDatabaseCafes(validCafes);
+        } else {
+          console.warn('getSavedCafes did not return an array:', savedCafes);
+          setDatabaseCafes([]);
+        }
+      } catch (err) {
+        console.error('Error loading cafes from database:', err);
+        setDatabaseCafes([]);
+        // Không hiển thị error, chỉ log để không làm phiền user
+      }
+    };
     
-    // Không tự động lấy GPS location - chỉ lấy khi user click "Vị trí của tôi"
-    // Không tự động load cafes - chỉ load khi user search hoặc click "Vị trí của tôi"
+    loadDatabaseCafes();
+    
+    // Set center mặc định là Hà Nội để map có vị trí hiển thị
+    setCenter({ lat: 21.028511, lng: 105.804817 });
   }, []); // Chỉ chạy 1 lần khi mount
 
   // Khi user gõ trong ô search
@@ -354,6 +538,18 @@ function Home() {
         rating: cafe.rating,
         user_rating_count: cafe.user_rating_count
       });
+      
+      // Cập nhật databaseCafes nếu cafe mới được thêm vào database
+      // Reload cafes từ database để có dữ liệu mới nhất
+      try {
+        const savedCafes = await apiService.getSavedCafes();
+        if (Array.isArray(savedCafes)) {
+          setDatabaseCafes(savedCafes);
+        }
+      } catch (err) {
+        console.error('Error reloading cafes from database:', err);
+      }
+      
       messageApi.success({
         content: `✅ Đã thêm "${cafe.name}" vào danh sách yêu thích`,
         duration: 5,
@@ -387,15 +583,132 @@ function Home() {
     }
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(cafes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCafes = cafes.slice(startIndex, endIndex);
+  // Merge cafes từ search/nearby với cafes từ database để hiển thị trên map
+  const mergedCafesForMap = useMemo(() => {
+    if (!showCafesOnMap) {
+      console.log('MapView: showCafesOnMap is false, returning empty array');
+      return [];
+    }
+    
+    // Merge cafes từ search/nearby với cafes từ database
+    // Loại bỏ duplicates dựa trên provider + provider_place_id hoặc id
+    const mergedCafes = [];
+    const existingKeys = new Set();
+    
+    // Thêm cafes hiện tại (từ search/nearby) - filter chỉ lấy cafes có lat/lng hợp lệ
+    cafes.forEach(cafe => {
+      if (!cafe) return;
+      if (typeof cafe.lat !== 'number' || typeof cafe.lng !== 'number' || 
+          isNaN(cafe.lat) || isNaN(cafe.lng) ||
+          cafe.lat < -90 || cafe.lat > 90 || cafe.lng < -180 || cafe.lng > 180) {
+        console.warn('Skipping cafe without valid coordinates:', cafe?.name || cafe, {
+          lat: cafe.lat,
+          lng: cafe.lng,
+          typeLat: typeof cafe.lat,
+          typeLng: typeof cafe.lng
+        });
+        return;
+      }
+      const key = cafe.id 
+        ? `id_${cafe.id}` 
+        : `${cafe.provider || 'unknown'}_${cafe.provider_place_id || 'unknown'}`;
+      if (!existingKeys.has(key)) {
+        mergedCafes.push(cafe);
+        existingKeys.add(key);
+      }
+    });
+    
+    // Thêm cafes từ database nếu chưa có
+    databaseCafes.forEach(cafe => {
+      if (!cafe) return;
+      if (typeof cafe.lat !== 'number' || typeof cafe.lng !== 'number' ||
+          isNaN(cafe.lat) || isNaN(cafe.lng) ||
+          cafe.lat < -90 || cafe.lat > 90 || cafe.lng < -180 || cafe.lng > 180) {
+        console.warn('Skipping database cafe without valid coordinates:', cafe?.name || cafe, {
+          lat: cafe.lat,
+          lng: cafe.lng,
+          typeLat: typeof cafe.lat,
+          typeLng: typeof cafe.lng
+        });
+        return; // Skip cafes without valid coordinates
+      }
+      const key = cafe.id 
+        ? `id_${cafe.id}` 
+        : `${cafe.provider || 'unknown'}_${cafe.provider_place_id || 'unknown'}`;
+      if (!existingKeys.has(key)) {
+        mergedCafes.push(cafe);
+        existingKeys.add(key);
+      }
+    });
+    
+    console.log('MapView: Merged cafes for map:', {
+      cafesCount: cafes.length,
+      databaseCafesCount: databaseCafes.length,
+      mergedCount: mergedCafes.length,
+      showCafesOnMap,
+      validCafes: mergedCafes.filter(c => c && c.lat && c.lng).length,
+      sampleCafe: mergedCafes[0] ? {
+        name: mergedCafes[0].name,
+        lat: mergedCafes[0].lat,
+        lng: mergedCafes[0].lng
+      } : null
+    });
+    
+    return mergedCafes;
+  }, [showCafesOnMap, cafes, databaseCafes]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  // Infinite scroll logic
+  // Hiển thị cafes từ đầu đến displayedCafesCount
+  const currentCafes = cafes.slice(0, displayedCafesCount);
+  const hasMore = displayedCafesCount < cafes.length;
+
+  // Reset displayed count khi cafes thay đổi (search mới, filter mới, etc.)
+  useEffect(() => {
+    setDisplayedCafesCount(3); // Reset về 3 items ban đầu
+  }, [cafes.length, mode, searchKeyword]); // Reset khi danh sách cafes thay đổi hoặc chuyển mode
+
+  // Infinite scroll handler
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    // Simulate loading delay để UX mượt hơn
+    setTimeout(() => {
+      setDisplayedCafesCount(prev => Math.min(prev + 3, cafes.length));
+      setIsLoadingMore(false);
+    }, 300);
+  }, [isLoadingMore, hasMore, cafes.length]);
+
+  // Infinite scroll using Intersection Observer (hiệu quả hơn scroll event)
+  useEffect(() => {
+    if (!hasMore || isLoadingMore || !sentinelRef.current) return;
+
+    const sentinel = sentinelRef.current;
+    const cafeListPanel = document.querySelector('.cafe-cards-container');
+    if (!cafeListPanel) return;
+
+    // Sử dụng Intersection Observer để detect khi sentinel visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && hasMore && !isLoadingMore) {
+            handleLoadMore();
+          }
+        });
+      },
+      {
+        root: cafeListPanel,
+        rootMargin: '50px', // Trigger trước 50px
+        threshold: 0.1
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoadingMore, handleLoadMore]);
 
   return (
     <>
@@ -427,8 +740,9 @@ function Home() {
             <button 
               className="nav-link"
               onClick={() => handleLocateMe()}
+              disabled={loading}
             >
-              {t('home.locateMe')}
+              {loading ? t('common.loading') : t('home.locateMe')}
             </button>
             <button 
               className="nav-link"
@@ -436,13 +750,226 @@ function Home() {
             >
               <HeartOutlined /> {t('home.favorites')}
             </button>
-            <button 
-              className="nav-link"
-              onClick={() => navigate('/admin')}
-              title="Admin Dashboard"
-            >
-              <SettingOutlined /> Admin
-            </button>
+            <LanguageDropdown textColor="#4b5563" />
+            <div style={{ position: 'relative' }} className="promotions-dropdown-container">
+              <button 
+                className="nav-link"
+                onClick={handleTogglePromotionsList}
+                style={{ position: 'relative' }}
+              >
+                <BellOutlined /> 
+                {allPromotions.length > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: '#ff4d4f',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    fontSize: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
+                  }}>
+                    {allPromotions.length}
+                  </span>
+                )}
+              </button>
+              {/* Dropdown promotions list */}
+              {showPromotionsList && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  background: '#fff',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  minWidth: '350px',
+                  maxWidth: '400px',
+                  maxHeight: '500px',
+                  overflowY: 'auto',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+                  border: '1px solid #e0b88a',
+                  zIndex: 1000
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1f2937' }}>
+                      <GiftOutlined style={{ color: '#ff4d4f', marginRight: '8px' }} />
+                      {t('promotion.title')} ({allPromotions.length})
+                    </h3>
+                    <button
+                      onClick={() => setShowPromotionsList(false)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '20px',
+                        color: '#666',
+                        padding: '0',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {loadingPromotions ? (
+                    <div style={{ textAlign: 'center', padding: '20px' }}>{t('common.loading')}...</div>
+                  ) : allPromotions.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                      {t('promotion.noPromotions')}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {allPromotions.map((promo) => {
+                        const formatDiscount = () => {
+                          if (promo.discount_type === 'percentage') {
+                            return `${t('promotion.percentage')} ${promo.discount_value}%`;
+                          } else if (promo.discount_type === 'fixed_amount') {
+                            return `${t('promotion.fixedAmount')} ${promo.discount_value?.toLocaleString('vi-VN')}đ`;
+                          } else if (promo.discount_type === 'free_item') {
+                            return `${t('promotion.freeItem')} ${promo.discount_value}`;
+                          }
+                          return t('promotion.special');
+                        };
+
+                        const formatTimeRemaining = () => {
+                          const now = new Date();
+                          const end = new Date(promo.end_date);
+                          const diff = end - now;
+                          if (diff < 0) return t('promotion.expired');
+                          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                          if (days > 0) return `${t('promotion.remainingTime')} ${days} ${t('promotion.daysRemaining')}`;
+                          if (hours > 0) return `${t('promotion.remainingTime')} ${hours} ${t('promotion.hoursRemaining')}`;
+                          return t('promotion.soonExpired');
+                        };
+
+                        return (
+                          <div
+                            key={promo.id}
+                            onClick={async () => {
+                              // Tìm cafe trong danh sách hiện tại
+                              let cafe = cafes.find(c => c.id === promo.cafe_id) ||
+                                databaseCafes.find(c => c.id === promo.cafe_id);
+                              
+                              // Nếu không tìm thấy, tạo cafe object từ promotion data
+                              if (!cafe && promo.cafe_lat && promo.cafe_lng) {
+                                cafe = {
+                                  id: promo.cafe_id,
+                                  name: promo.cafe_name,
+                                  address: promo.cafe_address || promo.cafe_name || '',
+                                  lat: parseFloat(promo.cafe_lat),
+                                  lng: parseFloat(promo.cafe_lng),
+                                  rating: null,
+                                  user_rating: null,
+                                  review_count: 0,
+                                  provider: 'database',
+                                  provider_place_id: `cafe_${promo.cafe_id}`
+                                };
+                                
+                                // Thêm cafe vào databaseCafes nếu chưa có
+                                setDatabaseCafes(prev => {
+                                  const exists = prev.find(c => c.id === cafe.id);
+                                  if (!exists) {
+                                    console.log('Adding cafe from promotion to databaseCafes:', cafe);
+                                    return [...prev, cafe];
+                                  }
+                                  return prev;
+                                });
+                                
+                                // Đợi một chút để state update
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                              }
+                              
+                              if (cafe && cafe.lat && cafe.lng) {
+                                // Set center và zoom vào cafe
+                                const newCenter = { 
+                                  lat: cafe.lat, 
+                                  lng: cafe.lng, 
+                                  _timestamp: Date.now() 
+                                };
+                                setCenter(newCenter);
+                                setShouldZoomToLocation(true);
+                                
+                                // Select cafe để highlight marker
+                                setTimeout(() => {
+                                  handleSelectCafe(cafe);
+                                }, 500);
+                                
+                                setTimeout(() => setShouldZoomToLocation(false), 2000);
+                              } else {
+                                messageApi.warning('Không tìm thấy thông tin vị trí của quán này');
+                              }
+                              setShowPromotionsList(false);
+                            }}
+                            style={{
+                              background: '#f5ede0',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              border: '1px solid #e0b88a',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#e8dcc8';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#f5ede0';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1f2937', flex: 1 }}>
+                                {promo.title}
+                              </h4>
+                              <span style={{
+                                background: '#ff4d4f',
+                                color: 'white',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                marginLeft: '8px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {formatDiscount()}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                              <EnvironmentOutlined style={{ marginRight: '4px' }} />
+                              {promo.cafe_name}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999' }}>
+                              {formatTimeRemaining()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {authService.isAdmin() && (
+              <button 
+                className="nav-link"
+                onClick={() => navigate('/admin')}
+                title="Admin Dashboard"
+              >
+                <SettingOutlined /> Admin
+              </button>
+            )}
             <div 
               className="nav-link nav-link-avatar"
               onClick={() => navigate('/profile')}
@@ -572,56 +1099,46 @@ function Home() {
               ) : (
                 <div className="cafe-empty">{t('home.noFilteredCafes')}</div>
               )}
+              {/* Sentinel element cho infinite scroll */}
+              {hasMore && (
+                <div 
+                  ref={sentinelRef}
+                  className="infinite-scroll-sentinel"
+                  style={{ 
+                    height: '1px', 
+                    visibility: 'hidden',
+                    marginTop: '10px'
+                  }}
+                />
+              )}
             </div>
-            {totalPages > 0 && (
-              <div className="cafe-pagination">
-                <div className="pagination-info">
-                  <span>
-                    {cafes.length > 0 
-                      ? `${t('home.page')} ${currentPage} ${t('home.of')} ${totalPages} (${t('home.total')} ${cafes.length} ${t('home.items')})`
-                      : t('home.noCafesNearby')
-                    }
-                  </span>
-                </div>
-                {totalPages > 1 && (
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      {t('common.previous')}
-                    </button>
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
-                        <button
-                          key={pageNum}
-                          className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
-                          onClick={() => handlePageChange(pageNum)}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    <button
-                      className="pagination-btn"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages}
-                    >
-                      {t('common.next')}
-                    </button>
+            {/* Infinite scroll loading indicator */}
+            {hasMore && (
+              <div className="infinite-scroll-loader" style={{ 
+                textAlign: 'center', 
+                padding: '20px',
+                color: '#666'
+              }}>
+                {isLoadingMore ? (
+                  <div>
+                    <span style={{ marginRight: '8px' }}>⏳</span>
+                    {t('common.loading')}...
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12px', color: '#999' }}>
+                    {t('home.total')} {cafes.length} {t('home.items')} • {t('home.scrollForMore')}
                   </div>
                 )}
+              </div>
+            )}
+            {!hasMore && cafes.length > 0 && (
+              <div className="infinite-scroll-end" style={{ 
+                textAlign: 'center', 
+                padding: '20px',
+                color: '#999',
+                fontSize: '12px'
+              }}>
+                {t('home.allCafesLoaded')} ({t('home.total')} {cafes.length} {t('home.items')})
               </div>
             )}
           </div>
@@ -643,7 +1160,7 @@ function Home() {
           </div>
           <MapView
             center={center}
-            cafes={showCafesOnMap ? cafes : []}
+            cafes={mergedCafesForMap}
             currentLocation={currentLocation}
             onSelectCafe={handleSelectCafe}
             zoomToLocation={shouldZoomToLocation && currentLocation ? currentLocation : null}

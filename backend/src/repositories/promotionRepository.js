@@ -220,6 +220,27 @@ async function deletePromotion(promotionId) {
   return result.rows[0] || null;
 }
 
+// Lấy tất cả active promotions (không cần auth, cho user xem)
+async function getAllActivePromotions(limit = 100) {
+  const result = await db.query(
+    `SELECT 
+      p.*,
+      c.name as cafe_name,
+      c.address as cafe_address,
+      c.lat as cafe_lat,
+      c.lng as cafe_lng
+    FROM promotions p
+    JOIN cafes c ON p.cafe_id = c.id
+    WHERE p.is_active = TRUE 
+      AND NOW() BETWEEN p.start_date AND p.end_date
+    ORDER BY p.created_at DESC
+    LIMIT $1`,
+    [limit]
+  );
+
+  return result.rows;
+}
+
 // Lấy tất cả promotions (cho admin)
 async function getAllPromotions(limit = 50, offset = 0) {
   const result = await db.query(
@@ -253,6 +274,7 @@ module.exports = {
   getPromotionById,
   updatePromotion,
   deletePromotion,
-  getAllPromotions
+  getAllPromotions,
+  getAllActivePromotions
 };
 

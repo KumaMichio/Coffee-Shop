@@ -5,6 +5,19 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /api/promotions/all - Lấy tất cả active promotions (không cần auth)
+router.get('/all', async (req, res) => {
+  try {
+    const promotions = await promotionRepository.getAllActivePromotions(100);
+    res.json({ promotions });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Get all active promotions error:', error);
+    }
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 // GET /api/promotions/nearby - Lấy promotions gần vị trí (không cần auth)
 router.get('/nearby', async (req, res) => {
   try {

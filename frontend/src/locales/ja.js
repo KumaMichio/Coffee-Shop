@@ -24,6 +24,7 @@ export default {
     settings: '設定',
     profile: 'プロフィール',
     favorites: 'お気に入り',
+    home: 'ホーム',
     reviews: 'レビュー',
     cafes: 'カフェ',
     distance: '距離',
@@ -62,10 +63,10 @@ export default {
 
   // Home
   home: {
-    title: 'カフェナン',
-    searchPlaceholder: '新話カフェ',
+    title: 'カフェナビ',
+    searchPlaceholder: 'カフェを検索...',
     locateMe: '現在地から探る',
-    favorites: 'おへわり',
+    favorites: 'お気に入り',
     logout: 'ログアウト',
     cafeList: 'カフェ一覧',
     noCafes: 'カフェを探すには、以下のいずれかを選択してください：',
@@ -87,7 +88,9 @@ export default {
     emptySearch: '検索キーワードを入力してください',
     searchError: '検索エラー',
     locationError: '位置情報を取得できませんでした',
-    noCafesNearby: '近くにカフェが見つかりませんでした'
+    noCafesNearby: '近くにカフェが見つかりませんでした',
+    scrollForMore: 'スクロールしてさらに表示',
+    allCafesLoaded: 'すべてのカフェを読み込みました'
   },
 
   // Profile
@@ -117,7 +120,17 @@ export default {
     selectLanguage: '言語を選択',
     japanese: '日本語',
     vietnamese: 'Tiếng Việt',
-    english: 'English'
+    english: 'English',
+    avatarHint: 'クリックしてアバターを変更 (最大5MB)',
+    joinDate: '登録日',
+    contributionHistory: '投稿履歴',
+    changePasswordButton: 'パスワードを変更',
+    passwordPlaceholder: 'パスワードを入力',
+    confirmPasswordPlaceholder: 'パスワードを再入力',
+    photos: '写真',
+    noPhotos: '写真がありません',
+    previous: '前へ',
+    next: '次へ'
   },
 
   // Review
@@ -171,7 +184,27 @@ export default {
     freeItem: '無料アイテム',
     time: '時間',
     cafe: 'カフェ',
-    description: '説明'
+    description: '説明',
+    title: 'プロモーション',
+    noPromotions: '現在進行中のプロモーションはありません',
+    special: '特別プロモーション',
+    remainingTime: '残り',
+    daysRemaining: '日',
+    hoursRemaining: '時間',
+    soonExpired: 'まもなく期限切れ',
+    expired: '期限切れ'
+  },
+
+  // Admin
+  admin: {
+    title: '管理者ダッシュボード',
+    totalUsers: '総ユーザー数',
+    totalReviews: '総レビュー数',
+    activePromotions: 'アクティブなプロモーション',
+    totalCafes: '総カフェ数',
+    promotions: 'プロモーション',
+    reviews: 'レビュー',
+    users: 'ユーザー'
   },
 
   // Directions

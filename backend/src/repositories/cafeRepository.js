@@ -375,12 +375,21 @@ async function searchCafesFromProviders({ lat, lng, radius, keyword }) {
     console.log('Goong results:', fromGoong.length, fromGoong.map(c => `${c.name}: ${c.distance}km`));
     console.log('Google results:', fromGoogle.length);
     
-    // LỌC THỰC SỰ THEO RADIUS (Goong API không tự lọc chính xác)
-    const radiusKm = radiusMeters / 1000;
-    const filteredFromGoong = fromGoong.filter(cafe => cafe.distance <= radiusKm);
-    const filteredFromGoogle = fromGoogle.filter(cafe => cafe.distance <= radiusKm);
-    
-    console.log('After filter (<= 2km):', filteredFromGoong.length, 'from Goong,', filteredFromGoogle.length, 'from Google');
+    // Nếu có keyword (search mode), không filter theo distance để hiển thị tất cả kết quả
+    // Nếu không có keyword (nearby mode), filter theo radius
+    let filteredFromGoong, filteredFromGoogle;
+    if (keyword) {
+      // Search mode: không filter theo distance, hiển thị tất cả kết quả
+      filteredFromGoong = fromGoong;
+      filteredFromGoogle = fromGoogle;
+      console.log('Search mode: showing all results without distance filter');
+    } else {
+      // Nearby mode: filter theo radius
+      const radiusKm = radiusMeters / 1000;
+      filteredFromGoong = fromGoong.filter(cafe => cafe.distance <= radiusKm);
+      filteredFromGoogle = fromGoogle.filter(cafe => cafe.distance <= radiusKm);
+      console.log('Nearby mode: filtered (<= ' + radiusKm + 'km):', filteredFromGoong.length, 'from Goong,', filteredFromGoogle.length, 'from Google');
+    }
 
     // Gom và loại duplicate theo provider+id
     const merged = [...filteredFromGoong, ...filteredFromGoogle];

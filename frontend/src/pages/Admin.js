@@ -13,6 +13,7 @@ import {
 import AdminPromotionsList from '../components/AdminPromotionsList';
 import AdminReviewsList from '../components/AdminReviewsList';
 import AdminUsersList from '../components/AdminUsersList';
+import LanguageDropdown from '../components/LanguageDropdown';
 import adminService from '../services/adminService';
 import authService from '../services/authService';
 import { useTranslation } from '../hooks/useTranslation';
@@ -27,9 +28,43 @@ function Admin() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Kiểm tra quyền admin khi component mount
   useEffect(() => {
-    loadStats();
-  }, []);
+    const checkAdminAccess = async () => {
+      let isAdminUser = authService.isAdmin();
+      
+      // Nếu không phải admin trong localStorage, thử lấy từ server
+      if (!isAdminUser) {
+        try {
+          const user = await authService.getMe();
+          if (!user || user.role !== 'admin') {
+            // Redirect về trang chủ nếu không phải admin
+            navigate('/', { replace: true });
+            return;
+          }
+          // Cập nhật localStorage với role từ server
+          if (user.role) {
+            localStorage.setItem('userRole', user.role);
+            localStorage.setItem('user', JSON.stringify({ ...user, role: user.role }));
+          }
+          isAdminUser = true;
+        } catch (error) {
+          console.error('Error checking admin access:', error);
+          // Nếu có lỗi, redirect về trang chủ
+          navigate('/', { replace: true });
+          return;
+        }
+      }
+      
+      // Chỉ load stats nếu là admin
+      if (isAdminUser) {
+        loadStats();
+      }
+    };
+
+    checkAdminAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   const loadStats = async () => {
     try {
@@ -59,15 +94,16 @@ function Admin() {
           <div className="admin-header-left">
             <h1 className="admin-title">
               <span className="coffee-icon">☕</span>
-              Admin Dashboard
+              {t('admin.title')}
             </h1>
           </div>
-          <div className="admin-header-right">
+          <div className="admin-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <LanguageDropdown textColor="#1f2937" />
             <button className="admin-nav-btn" onClick={handleGoHome}>
-              <HomeOutlined /> Home
+              <HomeOutlined /> {t('common.back')}
             </button>
             <button className="admin-nav-btn" onClick={handleLogout}>
-              <LogoutOutlined /> Logout
+              <LogoutOutlined /> {t('common.logout')}
             </button>
           </div>
         </div>
@@ -85,7 +121,7 @@ function Admin() {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Total Users"
+                    title={t('admin.totalUsers')}
                     value={stats?.total_users || 0}
                     prefix={<UserOutlined />}
                   />
@@ -94,7 +130,7 @@ function Admin() {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Total Reviews"
+                    title={t('admin.totalReviews')}
                     value={stats?.total_reviews || 0}
                     prefix={<StarOutlined />}
                   />
@@ -103,7 +139,7 @@ function Admin() {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Active Promotions"
+                    title={t('admin.activePromotions')}
                     value={stats?.active_promotions || 0}
                     prefix={<GiftOutlined />}
                   />
@@ -112,7 +148,7 @@ function Admin() {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Total Cafes"
+                    title={t('admin.totalCafes')}
                     value={stats?.total_cafes || 0}
                     prefix={<ShopOutlined />}
                   />
@@ -131,7 +167,7 @@ function Admin() {
                   tab={
                     <span>
                       <GiftOutlined />
-                      Promotions
+                      {t('admin.promotions')}
                     </span>
                   }
                   key="promotions"
@@ -143,7 +179,7 @@ function Admin() {
                   tab={
                     <span>
                       <StarOutlined />
-                      Reviews
+                      {t('admin.reviews')}
                     </span>
                   }
                   key="reviews"
@@ -155,7 +191,7 @@ function Admin() {
                   tab={
                     <span>
                       <UserOutlined />
-                      Users
+                      {t('admin.users')}
                     </span>
                   }
                   key="users"

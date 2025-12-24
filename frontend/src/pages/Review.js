@@ -4,13 +4,16 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button, Card, Spin, message } from 'antd';
 import { ArrowLeftOutlined, HomeOutlined, UserOutlined } from '@ant-design/icons';
 import ReviewForm from '../components/ReviewForm';
+import LanguageDropdown from '../components/LanguageDropdown';
 import reviewService from '../services/reviewService';
 import apiService from '../services/apiService';
+import { useTranslation } from '../hooks/useTranslation';
 
 function Review() {
   const { cafeId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [cafe, setCafe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
@@ -107,15 +110,24 @@ function Review() {
             onClick={() => navigate(-1)}
             className="review-back-btn"
           >
-            戻る
+            {t('common.back')}
           </Button>
-          <div className="review-page-icons">
-            <Button icon={<HomeOutlined />} className="review-icon-btn">
-              カフェナビ
+          <div className="review-page-icons" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Button 
+              icon={<HomeOutlined />} 
+              className="review-icon-btn"
+              onClick={() => navigate('/')}
+            >
+              {t('home.title')}
             </Button>
-            <Button icon={<UserOutlined />} className="review-icon-btn">
+            <Button 
+              icon={<UserOutlined />} 
+              className="review-icon-btn"
+              onClick={() => navigate('/profile')}
+            >
               <span className="notification-dot"></span>
             </Button>
+            <LanguageDropdown textColor="#1f2937" />
           </div>
         </div>
       </div>

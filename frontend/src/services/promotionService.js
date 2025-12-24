@@ -106,6 +106,17 @@ const promotionService = {
     return true;
   },
 
+  // Lấy tất cả active promotions (không cần auth)
+  getAllActivePromotions: async () => {
+    const res = await fetch(`${API_BASE}/api/promotions/all`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Failed to fetch promotions' }));
+      throw new Error(errorData.error || 'Failed to fetch all promotions');
+    }
+    const data = await res.json();
+    return data.promotions || [];
+  },
+
   // Lấy tất cả promotions (cho admin, cần auth)
   getAllPromotions: async (limit = 50, offset = 0) => {
     const token = localStorage.getItem('token');

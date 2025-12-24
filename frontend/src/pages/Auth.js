@@ -5,6 +5,7 @@ import { LoginOutlined, UserAddOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
+import LanguageDropdown from '../components/LanguageDropdown';
 import { useTranslation } from '../hooks/useTranslation';
 import './Auth.css';
 
@@ -61,6 +62,16 @@ const Auth = () => {
 
   return (
     <div className="auth-page">
+      {/* Language Selector */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        zIndex: 1000
+      }}>
+        <LanguageDropdown textColor="#1f2937" />
+      </div>
+
       {/* Left Section - Background Image */}
       <div 
         className="auth-background-section"
