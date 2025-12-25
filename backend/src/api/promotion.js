@@ -110,8 +110,7 @@ router.post('/', authenticateToken, async (req, res) => {
       discount_value,
       start_date,
       end_date,
-      is_active = true,
-      target_radius = 5000
+      is_active = true
     } = req.body;
 
     // Validate required fields
@@ -153,7 +152,6 @@ router.post('/', authenticateToken, async (req, res) => {
       start_date: startDate.toISOString(),
       end_date: endDate.toISOString(),
       is_active,
-      target_radius: parseInt(target_radius) || 5000,
       created_by: userId
     });
 

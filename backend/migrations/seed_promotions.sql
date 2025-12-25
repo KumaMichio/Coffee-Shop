@@ -40,7 +40,7 @@ BEGIN
     -- Promotion 1: Percentage discount
     INSERT INTO promotions (
       cafe_id, title, description, discount_type, discount_value,
-      start_date, end_date, is_active, target_radius, created_by
+      start_date, end_date, is_active, created_by
     )
     SELECT
       cafe_record.id,
@@ -51,7 +51,6 @@ BEGIN
       NOW() - INTERVAL '1 day',
       NOW() + INTERVAL '7 days',
       TRUE,
-      5000,
       admin_user_id
     WHERE NOT EXISTS (
       SELECT 1 FROM promotions 
@@ -68,7 +67,7 @@ BEGIN
     IF MOD(cafe_record.id, 2) = 0 THEN
       INSERT INTO promotions (
         cafe_id, title, description, discount_type, discount_value,
-        start_date, end_date, is_active, target_radius, created_by
+        start_date, end_date, is_active, created_by
       )
       SELECT
         cafe_record.id,
@@ -79,7 +78,6 @@ BEGIN
         NOW(),
         NOW() + INTERVAL '14 days',
         TRUE,
-        3000,
         admin_user_id
       WHERE NOT EXISTS (
         SELECT 1 FROM promotions 
@@ -97,7 +95,7 @@ BEGIN
     IF MOD(cafe_record.id, 3) = 0 THEN
       INSERT INTO promotions (
         cafe_id, title, description, discount_type, discount_value,
-        start_date, end_date, is_active, target_radius, created_by
+        start_date, end_date, is_active, created_by
       )
       SELECT
         cafe_record.id,
@@ -108,7 +106,6 @@ BEGIN
         NOW() + INTERVAL '2 days',
         NOW() + INTERVAL '30 days',
         TRUE,
-        7000,
         admin_user_id
       WHERE NOT EXISTS (
         SELECT 1 FROM promotions 
@@ -126,7 +123,7 @@ BEGIN
     IF MOD(cafe_record.id, 5) = 0 THEN
       INSERT INTO promotions (
         cafe_id, title, description, discount_type, discount_value,
-        start_date, end_date, is_active, target_radius, created_by
+        start_date, end_date, is_active, created_by
       )
       SELECT
         cafe_record.id,
@@ -137,7 +134,6 @@ BEGIN
         NOW() - INTERVAL '3 days',
         NOW() + INTERVAL '60 days',
         TRUE,
-        10000,
         admin_user_id
       WHERE NOT EXISTS (
         SELECT 1 FROM promotions 

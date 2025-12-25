@@ -123,64 +123,103 @@ const AdminPromotionsList = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 70,
+      fixed: 'left',
     },
     {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
+      width: 200,
+      ellipsis: {
+        showTitle: true,
+      },
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      width: 250,
+      ellipsis: {
+        showTitle: true,
+      },
+      render: (text) => text || '-',
     },
     {
       title: 'Cafe',
       key: 'cafe',
+      width: 220,
       render: (_, record) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{record.cafe_name}</div>
-          <div style={{ fontSize: '12px', color: '#999' }}>{record.cafe_address}</div>
+          <div style={{ fontWeight: 500, marginBottom: 4 }}>{record.cafe_name || '-'}</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>{record.cafe_address || '-'}</div>
         </div>
       ),
     },
     {
-      title: 'Discount',
+      title: 'Discount Type',
+      dataIndex: 'discount_type',
+      key: 'discount_type',
+      width: 130,
+      render: (type) => {
+        const typeMap = {
+          percentage: 'Percentage',
+          fixed_amount: 'Fixed Amount',
+          free_item: 'Free Item'
+        };
+        return typeMap[type] || type;
+      },
+    },
+    {
+      title: 'Discount Value',
       key: 'discount',
       width: 150,
       render: (_, record) => (
-        <div>
-          <Tag color="orange">{formatDiscount(record.discount_type, record.discount_value)}</Tag>
-        </div>
+        <Tag color="orange" style={{ margin: 0 }}>
+          {formatDiscount(record.discount_type, record.discount_value)}
+        </Tag>
       ),
     },
     {
-      title: 'Period',
-      key: 'period',
-      width: 200,
-      render: (_, record) => (
-        <div style={{ fontSize: '12px' }}>
-          <div>{new Date(record.start_date).toLocaleDateString()}</div>
-          <div style={{ color: '#999' }}>to {new Date(record.end_date).toLocaleDateString()}</div>
-        </div>
-      ),
+      title: 'Start Date',
+      dataIndex: 'start_date',
+      key: 'start_date',
+      width: 150,
+      render: (date) => date ? new Date(date).toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-',
+    },
+    {
+      title: 'End Date',
+      dataIndex: 'end_date',
+      key: 'end_date',
+      width: 150,
+      render: (date) => date ? new Date(date).toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-',
     },
     {
       title: 'Status',
       key: 'status',
-      width: 100,
+      width: 110,
+      fixed: 'right',
       render: (_, record) => getStatusTag(record),
-    },
-    {
-      title: 'Radius',
-      dataIndex: 'target_radius',
-      key: 'target_radius',
-      width: 100,
-      render: (radius) => `${(radius / 1000).toFixed(1)} km`,
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 150,
+      width: 180,
+      fixed: 'right',
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Button
             type="primary"
             icon={<EditOutlined />}
@@ -195,6 +234,7 @@ const AdminPromotionsList = () => {
             onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
+            okButtonProps={{ danger: true }}
           >
             <Button
               danger
@@ -253,15 +293,24 @@ const AdminPromotionsList = () => {
           style={{ width: 400 }}
         />
       </div>
-      <Table
-        columns={columns}
-        dataSource={promotions}
-        rowKey="id"
-        loading={loading}
-        pagination={pagination}
-        onChange={handleTableChange}
-        scroll={{ x: 1200 }}
-      />
+      <div className="admin-promotions-table">
+        <Table
+          columns={columns}
+          dataSource={promotions}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} promotions`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          onChange={handleTableChange}
+          scroll={{ x: 1500, y: 'calc(100vh - 400px)' }}
+          size="middle"
+          bordered
+        />
+      </div>
     </Card>
   );
 };

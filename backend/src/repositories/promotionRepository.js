@@ -12,7 +12,6 @@ async function createPromotion(promotionData) {
     start_date,
     end_date,
     is_active = true,
-    target_radius = 5000,
     created_by
   } = promotionData;
 
@@ -33,9 +32,9 @@ async function createPromotion(promotionData) {
   const result = await db.query(
     `INSERT INTO promotions (
       cafe_id, title, description, discount_type, discount_value,
-      start_date, end_date, is_active, target_radius, created_by
+      start_date, end_date, is_active, created_by
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *`,
     [
       cafe_id,
@@ -46,7 +45,6 @@ async function createPromotion(promotionData) {
       start_date,
       end_date,
       is_active,
-      target_radius,
       created_by || null
     ]
   );
@@ -87,7 +85,7 @@ async function getPromotionsNearby(lat, lng, radius = 5000) {
             sin(($1 * PI() / 180.0)) * sin((c.lat * PI() / 180.0))
           )
         )
-      ) <= LEAST(p.target_radius, $3)
+      ) <= $3
     ORDER BY distance ASC, p.created_at DESC
   `;
 
@@ -148,8 +146,7 @@ async function updatePromotion(promotionId, updateData) {
     discount_value,
     start_date,
     end_date,
-    is_active,
-    target_radius
+    is_active
   } = updateData;
 
   const updates = [];
@@ -183,10 +180,6 @@ async function updatePromotion(promotionId, updateData) {
   if (is_active !== undefined) {
     updates.push(`is_active = $${paramCount++}`);
     values.push(is_active);
-  }
-  if (target_radius !== undefined) {
-    updates.push(`target_radius = $${paramCount++}`);
-    values.push(target_radius);
   }
 
   if (updates.length === 0) {

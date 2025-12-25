@@ -168,8 +168,7 @@ describe('Promotion API - Promotions Management', () => {
           discount_value: 20,
           start_date: new Date().toISOString(),
           end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          is_active: true,
-          target_radius: 5000
+          is_active: true
         });
 
       expect(response.status).toBe(201);

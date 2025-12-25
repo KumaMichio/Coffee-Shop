@@ -105,7 +105,6 @@ const testUtils = {
       start_date: new Date(),
       end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       is_active: true,
-      target_radius: 5000,
       created_at: new Date(),
       ...overrides
     };

@@ -30,8 +30,7 @@ const PromotionForm = ({ promotion, onSuccess, onCancel }) => {
         discount_value: promotion.discount_value,
         start_date: promotion.start_date ? dayjs(promotion.start_date) : null,
         end_date: promotion.end_date ? dayjs(promotion.end_date) : null,
-        is_active: promotion.is_active,
-        target_radius: promotion.target_radius || 5000
+        is_active: promotion.is_active
       });
     }
   }, [promotion]);
@@ -67,8 +66,7 @@ const PromotionForm = ({ promotion, onSuccess, onCancel }) => {
         discount_value: values.discount_value,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date.toISOString(),
-        is_active: values.is_active !== false,
-        target_radius: values.target_radius || 5000
+        is_active: values.is_active !== false
       };
 
       if (isEditMode) {
@@ -95,8 +93,7 @@ const PromotionForm = ({ promotion, onSuccess, onCancel }) => {
       onFinish={onFinish}
       initialValues={{
         discount_type: 'percentage',
-        is_active: true,
-        target_radius: 5000
+        is_active: true
       }}
     >
         <Form.Item
@@ -180,18 +177,6 @@ const PromotionForm = ({ promotion, onSuccess, onCancel }) => {
             style={{ width: '100%' }}
             showTime
             format="YYYY-MM-DD HH:mm:ss"
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Target Radius (meters)"
-          name="target_radius"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={100}
-            max={50000}
-            placeholder="Default: 5000m (5km)"
           />
         </Form.Item>
 

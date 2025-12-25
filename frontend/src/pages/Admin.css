@@ -83,3 +83,46 @@
   font-weight: bold;
 }
 
+/* Promotion Management Table Styles */
+.admin-promotions-table {
+  overflow-x: auto;
+}
+
+.admin-promotions-table .ant-table {
+  font-size: 13px;
+}
+
+.admin-promotions-table .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-promotions-table .ant-table-tbody > tr > td {
+  white-space: nowrap;
+}
+
+.admin-promotions-table .ant-table-tbody > tr > td:not(:last-child) {
+  border-right: 1px solid #f0f0f0;
+}
+
+/* Ensure fixed columns are visible */
+.admin-promotions-table .ant-table-fixed-left,
+.admin-promotions-table .ant-table-fixed-right {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.admin-promotions-table .ant-table-fixed-right {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Action buttons styling */
+.admin-promotions-table .ant-btn-sm {
+  font-size: 12px;
+  padding: 0 8px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
