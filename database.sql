@@ -6,9 +6,6 @@
 -- CREATE DATABASE coffee_app;
 
 -- Sau do ket noi vao database coffee_app va chay phan con lai:
-DROP DATABASE IF EXISTS coffee_app;
-CREATE DATABASE coffee_app;
-\c coffee_app
 
 -- Set encoding to UTF8
 SET client_encoding = 'UTF8';

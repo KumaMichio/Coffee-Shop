@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: coffee-shop-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: coffee_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+    networks:
+      - coffee-shop-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: coffee-shop-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: coffee_app
+      DB_USER: postgres
+      DB_PASSWORD: 1
+      JWT_SECRET: your-secret-key-change-this-in-production
+      GOONG_API_KEY: ${GOONG_API_KEY:-}
+      GOONG_REST_API_KEY: ${GOONG_REST_API_KEY:-}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+    ports:
+      - "5001:5001"
+    depends_on:
+      - postgres
+    networks:
+      - coffee-shop-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: coffee-shop-frontend
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:5001/api
+      REACT_APP_GOONG_ACCESS_TOKEN: ${REACT_APP_GOONG_ACCESS_TOKEN:-}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - coffee-shop-network
+
+volumes:
+  postgres_data:
+
+networks:
+  coffee-shop-network:
+    driver: bridge

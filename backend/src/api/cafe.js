@@ -60,11 +60,11 @@ async function getCafesWithRatings(cafes) {
   if (cafeIds.length > 0) {
     const placeholders = cafeIds.map((_, i) => `$${i + 1}`).join(',');
     const result = await db.query(
-      `SELECT id, price_level FROM cafes WHERE id IN (${placeholders})`,
+      `SELECT id FROM cafes WHERE id IN (${placeholders})`,
       cafeIds
     );
     result.rows.forEach(row => {
-      dbDataMap.set(`id_${row.id}`, { price_level: row.price_level });
+      dbDataMap.set(`id_${row.id}`, { price_level: null }); // Set null since column doesn't exist
     });
   }
 
@@ -72,13 +72,13 @@ async function getCafesWithRatings(cafes) {
   if (providerPlaceIds.length > 0) {
     for (const { provider, provider_place_id } of providerPlaceIds) {
       const result = await db.query(
-        `SELECT id, price_level FROM cafes WHERE provider = $1 AND provider_place_id = $2 LIMIT 1`,
+        `SELECT id FROM cafes WHERE provider = $1 AND provider_place_id = $2 LIMIT 1`,
         [provider, provider_place_id]
       );
       if (result.rows.length > 0) {
         dbDataMap.set(`${provider}:${provider_place_id}`, {
           id: result.rows[0].id,
-          price_level: result.rows[0].price_level
+          price_level: null // Set null since column doesn't exist
         });
       }
     }
@@ -273,8 +273,8 @@ router.post('/favorites', async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO cafes
-        (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count, price_level)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        ON CONFLICT (provider, provider_place_id)
        DO UPDATE SET
           name = EXCLUDED.name,
@@ -283,7 +283,6 @@ router.post('/favorites', async (req, res) => {
           lng = EXCLUDED.lng,
           rating = EXCLUDED.rating,
           user_rating_count = EXCLUDED.user_rating_count,
-          price_level = EXCLUDED.price_level,
           updated_at = NOW()
        RETURNING *`,
       [
@@ -294,8 +293,7 @@ router.post('/favorites', async (req, res) => {
         lat,
         lng,
         rating || null,
-        user_rating_count || null,
-        price_level || null
+        user_rating_count || null
       ]
     );
 

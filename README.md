@@ -10,6 +10,7 @@
 - [Cài đặt](#-cài-đặt)
 - [Cấu hình](#-cấu-hình)
 - [Chạy ứng dụng](#-chạy-ứng-dụng)
+- [Chạy với Docker](#-chạy-với-docker)
 - [Cấu trúc dự án](#-cấu-trúc-dự-án)
 - [API Documentation](#-api-documentation)
 - [Testing](#-testing)
@@ -64,9 +65,14 @@
 
 ## 💻 Yêu cầu hệ thống
 
+### Development (Local)
 - **Node.js**: v18.0.0 trở lên
 - **npm**: v9.0.0 trở lên
 - **PostgreSQL**: v14.0 trở lên
+- **Git**: Để clone repository
+
+### Production (Docker)
+- **Docker**: v20.10+ với Docker Compose v2.0+
 - **Git**: Để clone repository
 
 ---
@@ -233,7 +239,139 @@ Backend sẽ serve cả frontend build và API tại port 5001.
 
 ---
 
-## 📁 Cấu trúc dự án
+## � Chạy với Docker
+
+### Yêu cầu hệ thống
+
+- **Docker**: v20.10+
+- **Docker Compose**: v2.0+
+
+### Khởi động ứng dụng với Docker
+
+#### Bước 1: Sao chép file environment
+
+```bash
+cp .env.example .env
+```
+
+#### Bước 2: Cập nhật API Keys trong `.env`
+
+Chỉnh sửa file `.env` và thêm các API keys cần thiết:
+
+```env
+# Goong Maps API Keys
+GOONG_API_KEY=your_goong_api_key
+GOONG_REST_API_KEY=your_goong_rest_api_key
+
+# Google Places API Key
+GOOGLE_PLACES_API_KEY=your_google_places_api_key
+
+# Frontend Configuration
+REACT_APP_GOONG_ACCESS_TOKEN=your_goong_access_token
+```
+
+#### Bước 3: Khởi động các services
+
+```bash
+docker-compose up -d
+```
+
+Lệnh này sẽ:
+- Khởi động PostgreSQL database
+- Build và chạy backend API
+- Build và chạy frontend React app
+- Tự động import database schema
+
+#### Bước 4: Truy cập ứng dụng
+
+- **Frontend:** `http://localhost:3000`
+- **Backend API:** `http://localhost:5001`
+
+### Quản lý Docker containers
+
+```bash
+# Xem trạng thái containers
+docker-compose ps
+
+# Xem logs
+docker-compose logs -f
+
+# Dừng ứng dụng
+docker-compose down
+
+# Dừng và xóa volumes (xóa database)
+docker-compose down -v
+
+# Rebuild và khởi động lại
+docker-compose up -d --build
+```
+
+### Cấu trúc Docker services
+
+- **postgres**: PostgreSQL database (port 5432)
+- **backend**: Node.js API server (port 5001)
+- **frontend**: React app với Nginx (port 3000)
+
+### Troubleshooting Docker
+
+#### Lỗi "Port already in use"
+
+```bash
+# Dừng các services đang chạy trên port
+docker-compose down
+
+# Hoặc thay đổi port trong docker-compose.yml
+```
+
+#### Lỗi database connection
+
+```bash
+# Kiểm tra PostgreSQL container
+docker-compose logs postgres
+
+# Restart database
+docker-compose restart postgres
+```
+
+#### Rebuild sau khi thay đổi code
+
+```bash
+# Rebuild backend
+docker-compose up -d --build backend
+
+# Rebuild frontend
+docker-compose up -d --build frontend
+```
+
+### Sử dụng Makefile (tùy chọn)
+
+Project bao gồm file `Makefile` để dễ dàng quản lý các lệnh development:
+
+```bash
+# Hiển thị help
+make help
+
+# Cài đặt dependencies
+make install
+
+# Chạy development servers
+make dev
+
+# Build production
+make build
+
+# Chạy tests
+make test
+
+# Docker commands
+make docker-up
+make docker-down
+make docker-build
+```
+
+---
+
+## �📁 Cấu trúc dự án
 
 ```
 Coffee-Shop/
@@ -265,6 +403,7 @@ Coffee-Shop/
 │   │   └── seed_promotions.sql
 │   ├── test/                 # Integration tests
 │   ├── .env                  # Environment variables
+│   ├── Dockerfile            # Docker configuration for backend
 │   └── package.json
 ├── frontend/
 │   ├── src/
@@ -306,10 +445,15 @@ Coffee-Shop/
 │   │   ├── manifest.json
 │   │   └── robots.txt
 │   ├── .env                  # Environment variables
+│   ├── Dockerfile            # Docker configuration for frontend
+│   ├── nginx.conf            # Nginx configuration for production
 │   └── package.json
 ├── docs/                     # Documentation
 │   └── API_SPECIFICATION.md
 ├── database.sql              # Database schema & initial data
+├── docker-compose.yml        # Docker Compose configuration
+├── .env.example              # Environment variables template
+├── Makefile                  # Development commands
 ├── .gitignore
 └── README.md
 ```
