@@ -77,6 +77,7 @@ function normalizePlace({
     lng: locationLng,
     rating: place.rating || null,
     user_rating_count: place.user_ratings_total || place.userRatingCount || null,
+    price_level: place.price_level || null, // 1-4: $ to $$$$
     distance,
     photo_url: photoUrl
   };

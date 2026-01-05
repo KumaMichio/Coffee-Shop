@@ -57,6 +57,7 @@ CREATE TABLE cafes (
   lng DOUBLE PRECISION NOT NULL,
   rating NUMERIC(2,1),
   user_rating_count INTEGER,
+  price_level INTEGER CHECK (price_level >= 1 AND price_level <= 4), -- 1: $, 2: $$, 3: $$$, 4: $$$$
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(provider, provider_place_id)

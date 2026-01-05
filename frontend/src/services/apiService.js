@@ -21,7 +21,7 @@ const apiService = {
   },
 
   // search từ Goong + Google
-  searchCafes: async ({ query, lat, lng, sort }) => {
+  searchCafes: async ({ query, lat, lng, sort, limit = 20, offset = 0 }) => {
     const params = new URLSearchParams();
     params.set('query', query);
     if (lat != null && lng != null) {
@@ -29,6 +29,8 @@ const apiService = {
       params.set('lng', lng);
     }
     if (sort) params.set('sort', sort);
+    params.set('limit', limit.toString());
+    params.set('offset', offset.toString());
     const res = await fetch(`${API_BASE}/api/cafes/search?` + params.toString());
     if (!res.ok) {
       const errorText = await res.text();
@@ -36,17 +38,23 @@ const apiService = {
       throw new Error(`Failed to search cafes: ${res.status}`);
     }
     const data = await res.json();
-    // Ensure we return an array
+    // Handle new paginated response format
+    if (data.cafes) {
+      return data.cafes;
+    }
+    // Fallback for old format (array)
     return Array.isArray(data) ? data : [];
   },
 
   // lấy quán gần vị trí hiện tại trong bán kính radius (m)
-  getNearbyCafes: async ({ lat, lng, radius = 2000, sort = 'distance' }) => {
+  getNearbyCafes: async ({ lat, lng, radius = 2000, sort = 'distance', limit = 20, offset = 0 }) => {
     const params = new URLSearchParams();
     params.set('lat', lat);
     params.set('lng', lng);
     params.set('radius', radius);
     params.set('sort', sort);
+    params.set('limit', limit.toString());
+    params.set('offset', offset.toString());
     const res = await fetch(`${API_BASE}/api/cafes/nearby?` + params.toString());
     if (!res.ok) {
       const errorText = await res.text();
@@ -54,7 +62,11 @@ const apiService = {
       throw new Error(`Failed to fetch nearby cafes: ${res.status}`);
     }
     const data = await res.json();
-    // Ensure we return an array
+    // Handle new paginated response format
+    if (data.cafes) {
+      return data.cafes;
+    }
+    // Fallback for old format (array)
     return Array.isArray(data) ? data : [];
   },
 

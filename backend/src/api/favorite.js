@@ -38,7 +38,8 @@ router.post('/', async (req, res) => {
       lat,
       lng,
       rating,
-      user_rating_count
+      user_rating_count,
+      price_level
     } = req.body;
 
     // Validate input
@@ -57,7 +58,8 @@ router.post('/', async (req, res) => {
       lat,
       lng,
       rating,
-      user_rating_count
+      user_rating_count,
+      price_level
     });
 
     res.status(201).json({

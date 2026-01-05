@@ -291,7 +291,8 @@ function Home() {
         lat: loc.lat,
         lng: loc.lng,
         radius: 2000,
-        sort: s
+        sort: s,
+        limit: 50 // Limit results to prevent performance issues
       });
 
       console.log('Nearby results:', list.length, 'cafes found');
@@ -357,7 +358,8 @@ function Home() {
         query: trimmed,
         lat: currentLocation?.lat,
         lng: currentLocation?.lng,
-        sort
+        sort,
+        limit: 50 // Limit results to prevent performance issues
       });
       
       console.log('Search results:', list.length, 'cafes found');
@@ -536,7 +538,8 @@ function Home() {
         lat: cafe.lat,
         lng: cafe.lng,
         rating: cafe.rating,
-        user_rating_count: cafe.user_rating_count
+        user_rating_count: cafe.user_rating_count,
+        price_level: cafe.price_level
       });
       
       // Cập nhật databaseCafes nếu cafe mới được thêm vào database

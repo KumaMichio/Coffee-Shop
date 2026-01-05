@@ -87,18 +87,19 @@ const FavoritesList = () => {
         gutter: [16, 16],
         xs: 1,
         sm: 1,
-        md: 2,
-        lg: 3,
-        xl: 3,
-        xxl: 4,
+        md: favorites.length === 1 ? 1 : 2,
+        lg: favorites.length === 1 ? 1 : 3,
+        xl: favorites.length === 1 ? 1 : 3,
+        xxl: favorites.length === 1 ? 1 : 4,
       }}
       dataSource={favorites}
       renderItem={(cafe) => (
-        <List.Item style={{ display: 'flex' }}>
+        <List.Item style={{ display: 'flex', justifyContent: favorites.length === 1 ? 'center' : 'stretch' }}>
           <Card
             hoverable
             style={{ 
-              width: '100%',
+              width: favorites.length === 1 ? '400px' : '100%',
+              maxWidth: '100%',
               display: 'flex', 
               flexDirection: 'column',
               minHeight: '280px'

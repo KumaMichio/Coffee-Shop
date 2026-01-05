@@ -383,6 +383,16 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
               padding: 2px 6px;
               border-radius: 4px;
             ">📍 ${distance}</span>
+            ${cafe.price_level ? `
+              <span style="
+                color: #059669;
+                font-size: 12px;
+                background: #d1fae5;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-weight: 500;
+              ">${'$'.repeat(cafe.price_level)}</span>
+            ` : ''}
           </div>
           ${cafe.address ? `
             <p style="

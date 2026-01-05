@@ -65,8 +65,8 @@ class FavoriteRepository {
       } else {
         // Tạo mới quán
         const newCafe = await client.query(
-          `INSERT INTO cafes (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          `INSERT INTO cafes (provider, provider_place_id, name, address, lat, lng, rating, user_rating_count, price_level)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING id`,
           [
             cafeData.provider,
@@ -76,7 +76,8 @@ class FavoriteRepository {
             cafeData.lat,
             cafeData.lng,
             cafeData.rating,
-            cafeData.user_rating_count
+            cafeData.user_rating_count,
+            cafeData.price_level || null
           ]
         );
         cafeId = newCafe.rows[0].id;
