@@ -1,17 +1,27 @@
-require('dotenv').config();
 const { Pool } = require('pg');
+const config = require('./config');
 
-// Lấy chuỗi kết nối từ file .env
+// Tạo pool connection với config
 const pool = new Pool({
-  connectionString: process.env.DB_URI,
+  host: config.db.host,
+  port: config.db.port,
+  database: config.db.database,
+  user: config.db.user,
+  password: config.db.password,
 });
 
 // Kiểm tra kết nối
-pool.connect((err, client, done) => {
+pool.connect((err, client, release) => {
   if (err) {
-    console.error('Error connecting to PostgreSQL', err.stack);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error connecting to PostgreSQL', err.stack);
+    }
   } else {
-    console.log('Connected to PostgreSQL');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Connected to PostgreSQL');
+    }
+    // trả client về pool
+    release();
   }
 });
 
