@@ -1,6 +1,6 @@
 # ☕ Coffee Shop Finder
 
-Ứng dụng web tìm kiếm và đánh giá quán cà phê, được phát triển bằng React (Frontend) và Node.js/Express (Backend).
+Ứng dụng web tìm kiếm và đánh giá quán cà phê, được phát triển bằng React (Frontend) và Node.js/Express (Backend). Dự án hỗ trợ tìm kiếm quán cà phê gần vị trí, xem bản đồ, đánh giá, quản lý yêu thích và nhiều tính năng khác.
 
 ## 📋 Mục lục
 
@@ -96,20 +96,28 @@ npm install
 
 ### 4. Setup Database
 
-Tạo database PostgreSQL:
+#### Tạo database PostgreSQL
+
+Mở PostgreSQL shell hoặc pgAdmin và chạy:
 
 ```sql
-CREATE DATABASE coffee_shop;
+CREATE DATABASE coffee_app;
 ```
 
-Chạy script tạo bảng:
+#### Import schema và dữ liệu mẫu
+
+Từ thư mục root của project, chạy:
 
 ```bash
-# Từ thư mục root
-psql -U postgres -d coffee_shop -f database.sql
+# Import schema và tạo bảng
+psql -U postgres -d coffee_app -f database.sql
+
+# Hoặc nếu bạn muốn chạy từng file migration
+psql -U postgres -d coffee_app -f backend/migrations/seed_cafes.sql
+psql -U postgres -d coffee_app -f backend/migrations/seed_promotions.sql
 ```
 
-Hoặc import file `database.sql` vào PostgreSQL bằng pgAdmin hoặc công cụ khác.
+**Lưu ý:** File `database.sql` sẽ tự động tạo database `coffee_app` nếu chưa tồn tại và import tất cả dữ liệu cần thiết.
 
 ---
 
@@ -123,7 +131,7 @@ Tạo file `.env` trong thư mục `backend/`:
 # Database
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=coffee_shop
+DB_NAME=coffee_app
 DB_USER=postgres
 DB_PASSWORD=your_password
 
@@ -138,7 +146,7 @@ GOONG_REST_API_KEY=your_goong_rest_api_key
 GOOGLE_PLACES_API_KEY=your_google_places_api_key
 
 # Server
-PORT=5000
+PORT=5001
 NODE_ENV=development
 ```
 
@@ -147,7 +155,7 @@ NODE_ENV=development
 Tạo file `.env` trong thư mục `frontend/`:
 
 ```env
-REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_API_URL=http://localhost:5001/api
 REACT_APP_GOONG_ACCESS_TOKEN=your_goong_access_token
 ```
 
@@ -168,16 +176,20 @@ REACT_APP_GOONG_ACCESS_TOKEN=your_goong_access_token
 
 ### Development Mode
 
-#### Backend
+#### Bước 1: Khởi động Backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-Backend sẽ chạy tại: `http://localhost:5000`
+Backend sẽ chạy tại: `http://localhost:5001`
 
-#### Frontend
+**Lưu ý:** Đảm bảo PostgreSQL đang chạy và database `coffee_app` đã được tạo.
+
+#### Bước 2: Khởi động Frontend
+
+Mở terminal mới và chạy:
 
 ```bash
 cd frontend
@@ -185,6 +197,10 @@ npm start
 ```
 
 Frontend sẽ chạy tại: `http://localhost:3000`
+
+#### Bước 3: Truy cập ứng dụng
+
+Mở trình duyệt và truy cập: `http://localhost:3000`
 
 ### Production Mode
 
@@ -202,6 +218,19 @@ cd backend
 npm start
 ```
 
+Backend sẽ serve cả frontend build và API tại port 5001.
+
+### Kiểm tra hoạt động
+
+- **API Health Check:** `http://localhost:5001/`
+- **Frontend:** `http://localhost:3000`
+- **API Base URL:** `http://localhost:5001/api`
+
+### Tài khoản mặc định
+
+- **Admin:** admin@admin.com / admin123
+- **User mẫu:** Có thể đăng ký tài khoản mới
+
 ---
 
 ## 📁 Cấu trúc dự án
@@ -211,40 +240,77 @@ Coffee-Shop/
 ├── backend/
 │   ├── src/
 │   │   ├── api/              # API routes
-│   │   │   ├── auth.js
-│   │   │   ├── cafe.js
-│   │   │   ├── favorite.js
-│   │   │   ├── review.js
-│   │   │   ├── profile.js
-│   │   │   ├── promotion.js
-│   │   │   ├── admin.js
-│   │   │   └── map.js
-│   │   ├── middleware/        # Middleware (auth, etc.)
+│   │   │   ├── auth.js       # Authentication endpoints
+│   │   │   ├── cafe.js       # Cafe management
+│   │   │   ├── favorite.js   # Favorites management
+│   │   │   ├── review.js     # Reviews management
+│   │   │   ├── profile.js    # User profile
+│   │   │   ├── promotion.js  # Promotions
+│   │   │   ├── admin.js      # Admin endpoints
+│   │   │   └── map.js        # Map services
+│   │   ├── middleware/       # Middleware (auth, etc.)
 │   │   ├── repositories/     # Database repositories
+│   │   │   ├── cafeRepository.js
+│   │   │   ├── favoriteRepository.js
+│   │   │   ├── promotionRepository.js
+│   │   │   ├── reviewRepository.js
+│   │   │   └── userRepository.js
+│   │   ├── __tests__/        # Unit tests
 │   │   ├── config.js         # Configuration
 │   │   ├── db.js             # Database connection
 │   │   ├── app.js            # Express app setup
 │   │   └── server.js         # Server entry point
-│   ├── migrations/           # Database migrations
+│   ├── migrations/           # Database migrations & seeds
+│   │   ├── seed_cafes.sql
+│   │   └── seed_promotions.sql
+│   ├── test/                 # Integration tests
+│   ├── .env                  # Environment variables
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/       # React components
+│   │   │   ├── AdminPromotionsList.js
+│   │   │   ├── AdminReviewsList.js
+│   │   │   ├── AdminUsersList.js
+│   │   │   ├── DirectionsModal.js
+│   │   │   ├── FavoritesList.js
+│   │   │   ├── FilterBar.js
+│   │   │   ├── LanguageSelector.js
+│   │   │   ├── LoginForm.js
+│   │   │   ├── MapView.js
+│   │   │   ├── PromotionForm.js
+│   │   │   ├── ReviewForm.js
+│   │   │   ├── SearchBar.js
+│   │   │   └── __tests__/
 │   │   ├── pages/            # Page components
-│   │   ├── services/        # API services
+│   │   │   ├── Admin.js
+│   │   │   ├── Auth.js
+│   │   │   ├── Favorites.js
+│   │   │   ├── Home.js
+│   │   │   ├── Profile.js
+│   │   │   └── Review.js
+│   │   ├── services/         # API services
 │   │   ├── contexts/         # React contexts
+│   │   │   └── LanguageContext.js
 │   │   ├── hooks/            # Custom hooks
+│   │   │   └── useTranslation.js
 │   │   ├── locales/          # i18n translations
-│   │   └── App.js            # Main App component
+│   │   │   ├── en.js
+│   │   │   ├── ja.js
+│   │   │   └── vi.js
+│   │   ├── App.css
+│   │   ├── App.js            # Main App component
+│   │   └── index.js
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── manifest.json
+│   │   └── robots.txt
+│   ├── .env                  # Environment variables
 │   └── package.json
 ├── docs/                     # Documentation
-│   ├── API_SPECIFICATION.md
-│   ├── FEATURES.md
-│   ├── TEST_PLAN.md
-│   ├── UAT_TEST_PLAN.md
-│   ├── INSTRUCTOR_GUIDE.md
-│   └── DEMO_SCRIPT.md
-├── database.sql              # Database schema
+│   └── API_SPECIFICATION.md
+├── database.sql              # Database schema & initial data
+├── .gitignore
 └── README.md
 ```
 
@@ -255,7 +321,7 @@ Coffee-Shop/
 Xem chi tiết tại: [docs/API_SPECIFICATION.md](docs/API_SPECIFICATION.md)
 
 ### Base URL
-- Development: `http://localhost:5000/api`
+- Development: `http://localhost:5001/api`
 - Production: `https://your-domain.com/api`
 
 ### Authentication
@@ -263,6 +329,13 @@ Hầu hết các API endpoints yêu cầu JWT token trong header:
 ```
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
+
+### Các endpoint chính
+- `POST /api/auth/login` - Đăng nhập
+- `POST /api/auth/register` - Đăng ký
+- `GET /api/cafes` - Lấy danh sách quán cà phê
+- `POST /api/reviews` - Tạo review
+- `GET /api/favorites` - Lấy danh sách yêu thích
 
 ---
 
@@ -284,39 +357,49 @@ npm test
 
 ### Test Coverage
 
-Xem chi tiết test plan tại: [docs/TEST_PLAN.md](docs/TEST_PLAN.md)
+Backend sử dụng Jest với coverage reporting. Test files nằm trong:
+- `backend/src/__tests__/` - Unit tests
+- `backend/test/` - Integration tests
+
+Frontend sử dụng React Testing Library.
 
 ---
 
 ## 📖 Tài liệu tham khảo
 
-- [FEATURES.md](docs/FEATURES.md) - Danh sách tính năng đã implement
 - [API_SPECIFICATION.md](docs/API_SPECIFICATION.md) - Đặc tả API đầy đủ
-- [TEST_PLAN.md](docs/TEST_PLAN.md) - Kế hoạch kiểm thử
-- [UAT_TEST_PLAN.md](docs/UAT_TEST_PLAN.md) - Kế hoạch UAT
-- [INSTRUCTOR_GUIDE.md](docs/INSTRUCTOR_GUIDE.md) - Hướng dẫn cho giảng viên
-- [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) - Kịch bản demo
+- [database.sql](database.sql) - Schema database và dữ liệu mẫu
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### Lỗi kết nối database
+- Kiểm tra PostgreSQL đã chạy: `sudo systemctl status postgresql` (Linux) hoặc kiểm tra Services (Windows)
+- Kiểm tra thông tin kết nối trong `backend/.env`
+- Kiểm tra database `coffee_app` đã được tạo: `psql -U postgres -l`
 
-- Kiểm tra PostgreSQL đã chạy chưa
-- Kiểm tra thông tin kết nối trong `.env`
-- Kiểm tra database đã được tạo chưa
+### Lỗi "Port already in use"
+- Backend: `lsof -ti:5001 | xargs kill -9` hoặc thay đổi PORT trong `.env`
+- Frontend: `lsof -ti:3000 | xargs kill -9`
 
 ### Lỗi API không hoạt động
-
-- Kiểm tra backend đã chạy chưa (port 5000)
-- Kiểm tra CORS configuration
-- Kiểm tra API keys trong `.env`
+- Kiểm tra backend đã chạy: `curl http://localhost:5001/`
+- Kiểm tra CORS: Frontend và backend phải chạy trên port khác nhau
+- Kiểm tra API keys trong `.env` files
 
 ### Lỗi bản đồ không hiển thị
-
-- Kiểm tra Goong Access Token trong `.env` của frontend
+- Kiểm tra Goong Access Token trong `frontend/.env`
 - Kiểm tra console browser để xem lỗi cụ thể
+- Đảm bảo không vi phạm CORS policy
+
+### Lỗi upload avatar
+- Kiểm tra limit body size trong Express (đã set 10mb)
+- Kiểm tra định dạng base64
+
+### Lỗi đa ngôn ngữ
+- Kiểm tra file locales có tồn tại và đúng format JSON
+- Kiểm tra LanguageContext được setup đúng
 
 ---
 
@@ -338,5 +421,5 @@ Nếu có vấn đề hoặc câu hỏi, vui lòng liên hệ nhóm phát triể
 
 ---
 
-**Last Updated:** 2024-12-24
+**Last Updated:** January 5, 2026  
 **Version:** 1.0.0
