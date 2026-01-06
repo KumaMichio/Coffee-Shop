@@ -3,7 +3,7 @@ const db = require('../db');
 
 // Tạo hoặc cập nhật đánh giá
 async function createOrUpdateReview(cafeId, reviewData) {
-  const { userId, rating, comment, is_public, is_child_friendly } = reviewData;
+  const { userId, rating, comment, is_public, is_child_friendly, images } = reviewData;
 
   // Validate inputs
   if (!userId || !cafeId || isNaN(cafeId) || isNaN(userId)) {
@@ -14,15 +14,19 @@ async function createOrUpdateReview(cafeId, reviewData) {
     throw new Error('Rating must be an integer between 1 and 5');
   }
 
+  // Validate images array (max 5 images)
+  const validImages = Array.isArray(images) ? images.slice(0, 5) : [];
+
   const result = await db.query(
-    `INSERT INTO reviews (user_id, cafe_id, rating, comment, is_public, is_child_friendly)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO reviews (user_id, cafe_id, rating, comment, is_public, is_child_friendly, images)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (user_id, cafe_id)
      DO UPDATE SET
        rating = EXCLUDED.rating,
        comment = EXCLUDED.comment,
        is_public = EXCLUDED.is_public,
        is_child_friendly = EXCLUDED.is_child_friendly,
+       images = EXCLUDED.images,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -31,7 +35,8 @@ async function createOrUpdateReview(cafeId, reviewData) {
       parseInt(rating), 
       comment || null, 
       is_public !== false, 
-      is_child_friendly || false
+      is_child_friendly || false,
+      validImages
     ]
   );
 

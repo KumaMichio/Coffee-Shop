@@ -280,12 +280,13 @@ function MapView({ center, cafes, currentLocation, onSelectCafe, zoomToLocation 
     if (!rating || rating === null || rating === undefined) {
       return '<span style="color: #999;">☆☆☆☆☆</span> <span style="color: #999; font-size: 12px;">N/A</span>';
     }
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - Math.ceil(rating);
+    const numRating = Number(rating);
+    const fullStars = Math.floor(numRating);
+    const hasHalfStar = numRating % 1 >= 0.5;
+    const emptyStars = 5 - Math.ceil(numRating);
     return `
       <span style="color: #fbbf24;">${'★'.repeat(fullStars)}${hasHalfStar ? '½' : ''}${'☆'.repeat(emptyStars)}</span>
-      <span style="color: #666; font-size: 12px; margin-left: 4px;">${rating.toFixed(1)}</span>
+      <span style="color: #666; font-size: 12px; margin-left: 4px;">${numRating.toFixed(1)}</span>
     `;
   }, []);
 

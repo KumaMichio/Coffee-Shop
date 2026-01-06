@@ -12,7 +12,7 @@ router.use(authenticateToken);
 router.post('/', async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { cafe_id, cafe_data, rating, comment, is_public, is_child_friendly } = req.body;
+    const { cafe_id, cafe_data, rating, comment, is_public, is_child_friendly, images } = req.body;
 
     // Validate input
     if (!cafe_id || rating === undefined || rating === null) {
@@ -26,6 +26,13 @@ router.post('/', async (req, res) => {
     if (isNaN(ratingInt) || ratingInt < 1 || ratingInt > 5) {
       return res.status(400).json({
         error: 'Rating phải là số nguyên từ 1 đến 5'
+      });
+    }
+
+    // Validate images array
+    if (images && !Array.isArray(images)) {
+      return res.status(400).json({
+        error: 'Images phải là một mảng'
       });
     }
 
@@ -89,7 +96,8 @@ router.post('/', async (req, res) => {
       rating: ratingInt,
       comment: comment || null,
       is_public: is_public !== false,
-      is_child_friendly: is_child_friendly || false
+      is_child_friendly: is_child_friendly || false,
+      images: images || []
     });
 
     res.status(201).json({

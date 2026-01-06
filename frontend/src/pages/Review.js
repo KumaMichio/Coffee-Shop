@@ -166,25 +166,46 @@ function Review() {
               <div className="reviews-list">
                 {reviews.map((review) => (
                   <div key={review.id || review.user_id} className="review-item">
-                    <div className="review-item-header">
-                      <span className="review-username">{review.username || '匿名ユーザー'}</span>
-                      <span className="review-rating">
-                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                      </span>
+                    <div className="review-avatar">
+                      {(review.username || 'U').charAt(0)}
                     </div>
-                    {review.comment && (
-                      <p className="review-comment">{review.comment}</p>
-                    )}
-                    <div className="review-item-footer">
-                      {review.is_child_friendly && (
-                        <span className="review-tag">子育て対応</span>
+                    <div className="review-content">
+                      <div className="review-item-header">
+                        <div className="review-user-info">
+                          <span className="review-username">{review.username || '匿名ユーザー'}</span>
+                          <span className="review-rating">
+                            {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                          </span>
+                          <div className="review-meta">
+                            <span className="review-date">
+                              {new Date(review.created_at || review.updated_at).toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="review-comment">{review.comment}</p>
                       )}
-                      <div className="review-date">
-                        {new Date(review.created_at || review.updated_at).toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                      {review.images && review.images.length > 0 && (
+                        <div className="review-images">
+                          {review.images.map((img, idx) => (
+                            <img 
+                              key={idx}
+                              src={img} 
+                              alt={`Review ${idx + 1}`}
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <div className="review-item-footer">
+                        {review.is_child_friendly && (
+                          <span className="review-tag">子育て対応</span>
+                        )}
                       </div>
                     </div>
                   </div>

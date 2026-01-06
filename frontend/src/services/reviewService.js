@@ -24,7 +24,8 @@ export const submitReview = async (cafeId, reviewData, cafe = null) => {
     rating: rating,
     comment: reviewData.comment || null,
     is_public: reviewData.is_public !== false,
-    is_child_friendly: reviewData.is_child_friendly || false
+    is_child_friendly: reviewData.is_child_friendly || false,
+    images: reviewData.images || []
   };
 
   // Nếu cafe_id không phải là số và có cafe data, gửi kèm cafe_data
