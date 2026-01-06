@@ -104,6 +104,11 @@ CREATE INDEX IF NOT EXISTS idx_reviews_user_cafe ON reviews(user_id, cafe_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
 
 -- ============================
+-- REVIEWS TABLE MIGRATION: Add images column
+-- ============================
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+
+-- ============================
 -- PROMOTIONS TABLE (Khuyen mai)
 -- ============================
 -- Bang luu thong tin khuyen mai cua cac quan ca phe
